@@ -1,0 +1,1 @@
+If a process crashes need to remove it from ets so it's not tried to shutdown at end

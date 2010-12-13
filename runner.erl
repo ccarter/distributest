@@ -1,6 +1,29 @@
 -module(runner).
 -compile(export_all).
 
+%%NODE PREP. 1 spawn for each node to get it rsynced.
+start_runners(Reporter, MasterPid) ->
+	start_runners(configuration:runner_settings(), Reporter, MasterPid).
+start_runners([], _, _) -> done;
+start_runners([H|T], Reporter, MasterPid) -> 
+  {{host, Host},{runner_count, RunnerCount}} = H,
+	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
+	spawn(fun() -> start_runner(Host, RunnerCount, Reporter, MasterPid) end),
+	start_runners(T, Reporter, MasterPid).
+  
+start_runner(_,0,_,_) ->  
+  done;
+start_runner(Host, RunnerCount, Reporter, MasterPid) ->
+	%local hostname to prefix remote node names
+	{ok, LocalHostname} = inet:gethostname(),
+	NodeName = list_to_atom(LocalHostname ++ "_runner" ++ "@" ++ Host),
+	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
+  RunnerPid = runner:start(NodeName, MasterPid,  RunnerCount, Reporter),
+  ets:insert(runners, {runner, RunnerPid}),
+  start_runner(Host, RunnerCount - 1, Reporter, MasterPid).
+
+%%END NODE PREP
+
 start(Node, MasterNode, RunnerNumber, Reporter) ->
   spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter) end).
 

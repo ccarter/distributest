@@ -2,33 +2,13 @@
 -compile(export_all).
 
 start() ->
-	ets:new(runners, [bag, named_table]),
+  ets:new(runners, [bag, public, named_table]),
 	register(master, self()),
 	Reporter = reporter:start(),
 	register(reporter, Reporter),
-  start_runners(Reporter),
+  runner:start_runners(Reporter, self()),
   run_files(),
 	self().
-
-start_runners(Reporter) ->
-	start_runners(configuration:runner_settings(), Reporter).
-start_runners([], _) -> done;
-start_runners([H|T], Reporter) -> 
-  {{host, Host},{runner_count, RunnerCount}} = H,
-	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
-	start_runner(Host, RunnerCount, Reporter),
-	start_runners(T, Reporter).
-  
-start_runner(Host, 0, _) ->  
-  done;
-start_runner(Host, RunnerCount, Reporter) ->
-	%local hostname to prefix remote node names
-	{ok, LocalHostname} = inet:gethostname(),
-	NodeName = list_to_atom(LocalHostname ++ "_runner" ++ "@" ++ Host),
-	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
-  RunnerPid = runner:start(NodeName, self(),  RunnerCount, Reporter),
-  ets:insert(runners, {runner, RunnerPid}),
-  start_runner(Host, RunnerCount - 1, Reporter).
 	
 run_files() ->
 	FilesToRun = files:test_files(),

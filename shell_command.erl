@@ -1,5 +1,5 @@
 -module(shell_command).
--export([run/2]).
+-export([run/2, rsync/3]).
 
 run(Dir, Cmd) ->
   run(Dir, Cmd, 60000).
@@ -16,3 +16,9 @@ loop(Port, Data, Timeout) ->
     after Timeout ->
     	throw(timeout)
     end.
+
+rsync(MasterPid, Dir, UserHost) ->
+	{ok, ProjectDir} = file:get_cwd(),
+	{ok, LocalHostname} = inet:gethostname(),
+	ProjectName = lists:last(string:tokens(ProjectDir, "/")),
+	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ UserHost ++ ":/tmp/" ++ LocalHostname).

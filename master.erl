@@ -20,13 +20,12 @@ start_runners([H|T], Reporter) ->
 	start_runners(T, Reporter).
   
 start_runner(Host, 0, _) ->  
-  "Done starting runners for" ++ Host;
+  done;
 start_runner(Host, RunnerCount, Reporter) ->
-	%uses local hostname to prefix remote node names
+	%local hostname to prefix remote node names
 	{ok, LocalHostname} = inet:gethostname(),
 	NodeName = list_to_atom(LocalHostname ++ "_runner" ++ "@" ++ Host),
 	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
-  %register(RegisterName, runner:start(NodeName, self(),  RunnerCount)),
   RunnerPid = runner:start(NodeName, self(),  RunnerCount, Reporter),
   ets:insert(runners, {runner, RunnerPid}),
   start_runner(Host, RunnerCount - 1, Reporter).

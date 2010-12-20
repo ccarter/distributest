@@ -1,5 +1,5 @@
 -module(shell_command).
--export([run/2, rsync/3]).
+-export([run/2, rsync/3, rsync_local/0]).
 
 run(Dir, Cmd) ->
   run(Dir, Cmd, 60000).
@@ -17,8 +17,15 @@ loop(Port, Data, Timeout) ->
     	throw(timeout)
     end.
 
+%TODO move rsync stuff to diff module
 rsync(MasterPid, Dir, UserHost) ->
 	{ok, ProjectDir} = file:get_cwd(),
 	{ok, LocalHostname} = inet:gethostname(),
 	ProjectName = lists:last(string:tokens(ProjectDir, "/")),
-	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ UserHost ++ ":/tmp/" ++ LocalHostname).
+	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ " " ++ UserHost ++ ":" ++ configuration:remote_dir() ++ LocalHostname).
+	
+%to remove after removing local rsyncing
+rsync_local() ->
+	{ok, ProjectDir} = file:get_cwd(),
+	{ok, LocalHostname} = inet:gethostname(),
+	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ " " ++ configuration:remote_dir() ++ LocalHostname).

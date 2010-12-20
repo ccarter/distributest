@@ -1,3 +1,5 @@
+{remote_dir, "/Users/testadmin/dis_test"}.
+{test_files, "spec/**/*_spec.rb"}.
 {{host, "127.0.0.1"},{runner_count, 2}}.
 {{host, "10.6.63.12"},{runner_count, 0}}.
 

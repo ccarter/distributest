@@ -1,9 +1,9 @@
 -module(files).
 -include_lib("kernel/include/file.hrl").
--compile(export_all).
+-export([test_files/0]).
 
 test_files() ->
-	Files = filelib:wildcard("/Users/racker/Projects/ip_commander/spec/**/*_spec.rb"),
+	Files = filelib:wildcard(configuration:test_files_glob()),
 	file_sort_on_size(Files).
 	
 file_sort_on_size(Files) ->

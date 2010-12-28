@@ -20,6 +20,9 @@ start_runners(Host, 0, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p is set to 0 runners ~n", [Host]),
 	start_runners(RemainingHosts, Reporter, MasterPid);
 %remote host
+%%TODO MOVE ALL THIS SETUP STUFF TO DIFF MODULE. Currently spawning a runner process locally
+%%to setup and then it spawns the remote runner process on nodes. This module should only be responsible
+%%for 1 thing
 start_runners(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
   spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
@@ -37,29 +40,30 @@ start_runner(Host, RunnerCount, Reporter, MasterPid) ->
 	{ok, LocalHostname} = inet:gethostname(),
 	NodeName = list_to_atom(LocalHostname ++ "_runner" ++ "@" ++ Host),
 	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
-  RunnerPid = runner:start(NodeName, MasterPid,  RunnerCount, Reporter),
+  RunnerPid = runner:start(NodeName, MasterPid,  RunnerCount, Reporter, project:remote_path()),
   ets:insert(runners, {runner, RunnerPid}),
   start_runner(Host, RunnerCount - 1, Reporter, MasterPid).
 
 %%END NODE PREP
 
-start(Node, MasterNode, RunnerNumber, Reporter) ->
-  spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter) end).
+start(Node, MasterNode, RunnerNumber, Reporter, ProjectFilePath) ->
+  spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) end).
 
-setup_and_start(RunnerNumber, MasterNode, Reporter) ->
-  setup_environment(RunnerNumber),
-  startup_ruby(RunnerNumber, MasterNode, Reporter).
+setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
+  setup_environment(RunnerNumber, ProjectFilePath),
+  startup_ruby(RunnerNumber, MasterNode, Reporter, ProjectFilePath).
   
 runner_identifier(RunnerNumber) ->
   integer_to_list(RunnerNumber).
 
-setup_environment(RunnerNumber) ->
+%%Note the ProjectFilePath is determined before the remote process is spawned
+%%TODO figure out where to move the setup script
+setup_environment(RunnerNumber, ProjectFilePath) ->
   SetupScript = "bash /Users/racker/erlang/configuration/setup_environment.sh ",
-  DirToRunIn = "/Users/racker/Projects/ip_commander",
-  shell_command:run(DirToRunIn, SetupScript ++ runner_identifier(RunnerNumber)).
+  shell_command:run(ProjectFilePath, SetupScript ++ runner_identifier(RunnerNumber)).
 
-startup_ruby(RunnerNumber, MasterNode, Reporter) ->
-	Cmd = "ruby /Users/racker/Projects/ip_commander/curtis_spec.rb " ++ runner_identifier(RunnerNumber),
+startup_ruby(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
+	Cmd = "ruby " ++ ProjectFilePath ++ "/curtis_spec.rb " ++ runner_identifier(RunnerNumber),
   Port = open_port({spawn, Cmd}, [{packet, 4}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files

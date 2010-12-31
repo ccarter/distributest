@@ -37,6 +37,10 @@ shutdown_runners(Runners) ->
 ets_runner_list() ->
   EtsRunnerList = ets:lookup(runners, runner),
   [Runner || {runner, Runner} <- EtsRunnerList]. 
+
+master_hostname() -> 
+	{ok, Hostname} = inet:gethostname(),
+	Hostname.
 	
 loop([]) -> 
   shutdown_runners(ets_runner_list());
@@ -45,6 +49,10 @@ loop([FilesHead|FilesTail]) ->
     {ready_for_file, Runner} ->
 	    run_file(Runner, FilesHead),
 	    loop(FilesTail);
+	
+	  {master_hostname, RunnerPid} ->
+		  RunnerPid ! {master_hostname, master_hostname()},
+		  loop([FilesHead|FilesTail]);
 
 		Any ->
 			io:format("DEBUG !!!!!!!!!!! Received:~p~n",[Any]),

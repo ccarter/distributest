@@ -21,8 +21,7 @@ start_runners(Host, 0, RemainingHosts, Reporter, MasterPid) ->
 	start_runners(RemainingHosts, Reporter, MasterPid);
 %remote host
 %%TODO MOVE ALL THIS SETUP STUFF TO DIFF MODULE. Currently spawning a runner process locally
-%%to setup and then it spawns the remote runner process on nodes. This module should only be responsible
-%%for 1 thing
+%%to setup and then it spawns the remote runner process on nodes.
 start_runners(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
   spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
@@ -50,20 +49,27 @@ start(Node, MasterNode, RunnerNumber, Reporter, ProjectFilePath) ->
   spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) end).
 
 setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
-  setup_environment(RunnerNumber, ProjectFilePath),
+  setup_environment(RunnerNumber, ProjectFilePath, MasterNode),
   startup_ruby(RunnerNumber, MasterNode, Reporter, ProjectFilePath).
   
-runner_identifier(RunnerNumber) ->
-  integer_to_list(RunnerNumber).
+%%Gets hostname from master pid and removes non alpha characters from it.
+%%Adds runner number to end
+runner_identifier(RunnerNumber, MasterNode) ->
+	MasterNode ! {master_hostname, self()},
+	receive
+		{master_hostname, Hostname} -> ok
+	end,
+	{match, NormalizedHostName} = re:run(Hostname,"[A-Za-z]*",[global, notempty, {capture, all, list}]),
+  lists:flatten(NormalizedHostName) ++ integer_to_list(RunnerNumber).
 
 %%Note the ProjectFilePath is determined before the remote process is spawned
 %%TODO figure out where to move the setup script
-setup_environment(RunnerNumber, ProjectFilePath) ->
+setup_environment(RunnerNumber, ProjectFilePath, MasterNode) ->
   SetupScript = "bash /Users/racker/erlang/configuration/setup_environment.sh ",
-  shell_command:run(ProjectFilePath, SetupScript ++ runner_identifier(RunnerNumber)).
+  shell_command:run(ProjectFilePath, SetupScript ++ runner_identifier(RunnerNumber, MasterNode)).
 
 startup_ruby(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby " ++ ProjectFilePath ++ "/curtis_spec.rb " ++ runner_identifier(RunnerNumber),
+	Cmd = "ruby " ++ ProjectFilePath ++ "/curtis_spec.rb " ++ runner_identifier(RunnerNumber, MasterNode),
   Port = open_port({spawn, Cmd}, [{packet, 4}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files

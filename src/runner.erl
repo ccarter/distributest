@@ -22,6 +22,7 @@ start_runners(Host, 0, RemainingHosts, Reporter, MasterPid) ->
 %remote host
 %%TODO MOVE ALL THIS SETUP STUFF TO DIFF MODULE. Currently spawning a runner process locally
 %%to setup and then it spawns the remote runner process on nodes.
+%%Also remove the runner process ProjectFilePath 's from being passed in and around
 start_runners(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
   spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
@@ -62,14 +63,13 @@ runner_identifier(RunnerNumber, MasterNode) ->
 	{match, NormalizedHostName} = re:run(Hostname,"[A-Za-z]*",[global, notempty, {capture, all, list}]),
   lists:flatten(NormalizedHostName) ++ integer_to_list(RunnerNumber).
 
-%%Note the ProjectFilePath is determined before the remote process is spawned
-%%TODO figure out where to move the setup script
+%%Note the ProjectFilePath is determined before the remote process is spawned. Going to change this
 setup_environment(RunnerNumber, ProjectFilePath, MasterNode) ->
-  SetupScript = "bash /Users/racker/erlang/configuration/setup_environment.sh ",
+  SetupScript = "bash " ++ ProjectFilePath ++ "/spec/setup_environment.sh ",
   shell_command:run(ProjectFilePath, SetupScript ++ runner_identifier(RunnerNumber, MasterNode)).
 
 startup_ruby(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby " ++ ProjectFilePath ++ "/curtis_spec.rb " ++ runner_identifier(RunnerNumber, MasterNode),
+	Cmd = "ruby " ++ ProjectFilePath ++ "/spec/curtis_spec.rb " ++ runner_identifier(RunnerNumber, MasterNode),
   Port = open_port({spawn, Cmd}, [{packet, 4}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files

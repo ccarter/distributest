@@ -1,5 +1,4 @@
-#rspec_dir = '/Users/testadmin/blackbox/autohost_api/vendor/plugins/rspec/lib'
-#$LOAD_PATH.unshift(rspec_dir)
+###MOVE THIS TO YOUR RAILS APP/SPEC FOLDER
 require 'rubygems'
 require 'erlectricity'
 
@@ -99,6 +98,9 @@ receive do |f|
     end
     f.receive_loop
   end
+  
+  f.when(:stop) { f.send!([:port_shutdown, "normal"]) }
+  
   f.when([:object, Any]) do |obj|
     puts "in ruby in Any with obj #{obj.inspect}"
     f.send!([:barf, "Barf in ruby with obj #{obj.inspect}"])

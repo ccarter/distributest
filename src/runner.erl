@@ -13,14 +13,14 @@ setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
   setup_environment(RunnerNumber, ProjectFilePath, MasterNode),
   startup_ruby(RunnerNumber, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath).
   
-%%Gets hostname from master pid and removes non alpha characters from it.
+%%Gets hostname from master and removes non alpha numeric characters from it.
 %%Adds runner number to end
 runner_identifier(RunnerNumber, MasterNode) ->
 	MasterNode ! {master_hostname, self()},
 	receive
 		{master_hostname, Hostname} -> ok
 	end,
-	{match, NormalizedHostName} = re:run(Hostname,"[A-Za-z]*",[global, notempty, {capture, all, list}]),
+	{match, NormalizedHostName} = re:run(Hostname,"[A-Za-z0-9]*",[global, notempty, {capture, all, list}]),
   lists:flatten(NormalizedHostName) ++ integer_to_list(RunnerNumber).
 
 %%Note the ProjectFilePath is determined before the remote process is spawned. Going to change this
@@ -68,6 +68,9 @@ loop(X, Port, MasterNode, MasterMonitorReference, Reporter) ->
 		{'DOWN', MasterMonitorReference, process, _Pid, _Reason} -> 
       stop_port(Port),
 		  loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
+		
+		%Grabbing ruby exits here and stopping the runner
+		{Port, {exit_status, _ExitNumber}} -> exit(rubydied);
 
 		%grab everything that doesn't match. FOR DEVELOPMENT DEBUGING
 		Any ->

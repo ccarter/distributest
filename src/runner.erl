@@ -1,48 +1,6 @@
 -module(runner).
 -compile(export_all).
 
-%%Node prep then starts the runner process
-start_runners(Reporter, MasterPid) ->
-	start_runners(configuration:runner_settings(), Reporter, MasterPid).
-start_runners([], _, _) -> done;
-start_runners([H|T], Reporter, MasterPid) -> 
-  {{host, Host},{runner_count, RunnerCount}} = H,
-  start_runners(Host, RunnerCount, T, Reporter, MasterPid).
-	
-%local host
-start_runners("127.0.0.1", RunnerCount, RemainingHosts, Reporter, MasterPid) ->
-  io:format("Host: Local RunnerCount: ~p ~n", [RunnerCount]),
-%TODO remove once rsync testing locally is done
-  spawn(fun() -> sync_files("127.0.0.1", RunnerCount, Reporter, MasterPid) end),
-	start_runners(RemainingHosts, Reporter, MasterPid);
-%disabled host as RunnerCount is 0
-start_runners(Host, 0, RemainingHosts, Reporter, MasterPid) ->
-	io:format("Host: ~p is set to 0 runners ~n", [Host]),
-	start_runners(RemainingHosts, Reporter, MasterPid);
-%remote host
-%%TODO MOVE ALL THIS SETUP STUFF TO DIFF MODULE. Currently spawning a runner process locally
-%%to setup and then it spawns the remote runner process on nodes.
-%%Also remove the runner process ProjectFilePath 's from being passed in and around
-start_runners(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
-	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
-  spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
-	start_runners(RemainingHosts, Reporter, MasterPid).
- 
-%TODO: See if I can move this down into start_runner
-sync_files(Host, RunnerCount, Reporter, MasterPid) ->
-	shell_command:rsync_local(),
-  start_runner(Host, RunnerCount, Reporter, MasterPid).
-
-start_runner(_,0,_,_) ->  
-  done;
-start_runner(Host, RunnerCount, Reporter, MasterPid) ->
-	NodeName = list_to_atom("runner" ++ "@" ++ Host),
-	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
-  RunnerPid = runner:start(NodeName, MasterPid,  RunnerCount, Reporter, project:remote_path()),
-  ets:insert(runners, {runner, RunnerPid}),
-  start_runner(Host, RunnerCount - 1, Reporter, MasterPid).
-
-%%END NODE PREP
 master_monitor(MasterNode) ->
 	process_flag(trap_exit, true),
 	erlang:monitor(process, MasterNode).
@@ -77,7 +35,7 @@ startup_ruby(RunnerNumber, MasterMonitorReference, MasterNode, Reporter, Project
   %tell the master we are ready to start running files
   MasterNode ! {ready_for_file, self()},
   loop([], Port, MasterNode, MasterMonitorReference, Reporter).
-
+	
 loop(X, Port, MasterNode, MasterMonitorReference, Reporter) ->
 	receive
 		%receives the results from the ruby process

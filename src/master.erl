@@ -1,12 +1,13 @@
 -module(master).
--compile(export_all).
+-export([start/0]).
 
 start() ->
+	process_flag(trap_exit, true),
   ets:new(runners, [bag, public, named_table]),
 	register(master, self()),
 	Reporter = reporter:start(),
 	register(reporter, Reporter),
-  runner:start_runners(Reporter, self()),
+  runner_node_prep:start(Reporter, self()),
   run_files(),
 	self().
 	
@@ -25,7 +26,7 @@ shutdown_runners([]) ->
 shutdown_runners(Runners) ->
   receive
 	  {ready_for_file, Runner} ->
-		%allow runner a moment to send any remaining messages to reporter
+		%TODO: Had some timing issues on shutdown, not sure if still needed
 		  timer:sleep(3000),
 		  %TODO: not really needed anymore
 		  ets:delete_object(runners, {runner, Runner}),
@@ -42,6 +43,25 @@ master_hostname() ->
 	{ok, Hostname} = inet:gethostname(),
 	Hostname.
 	
+%%Due to the multi process and async way I am starting runners I send a message back to master 
+%%when a runner is spawned.Currently only used to setup tracking
+runner_up(RunnerPid) ->
+	ets:insert(runners, {runner, RunnerPid}), 
+	erlang:monitor(process, RunnerPid).
+	
+%%TODO log abnormal runner shutdowns
+%%Might want to rethink the halt as the first runner could die before the 2nd one is going
+runner_abnormal_down(check_if_any_left) ->
+	case ets_runner_list() == [] of
+		false -> ok;
+		true -> 
+		  io:format("All runners died abnormally"),
+		  halt()
+	end;
+runner_abnormal_down(RunnerPid) ->
+	ets:delete_object(runners, {runner, RunnerPid}),
+	runner_abnormal_down(check_if_any_left).
+	
 loop([]) -> 
   shutdown_runners(ets_runner_list());
 loop([FilesHead|FilesTail]) ->
@@ -53,6 +73,15 @@ loop([FilesHead|FilesTail]) ->
 	  {master_hostname, RunnerPid} ->
 		  RunnerPid ! {master_hostname, master_hostname()},
 		  loop([FilesHead|FilesTail]);
+		
+		{runner_up, RunnerPid} ->
+			runner_up(RunnerPid),
+			loop([FilesHead|FilesTail]);
+			
+		%For runner going down, may need to relook at better way if I ever monitor other types of processes
+		{'DOWN', _Ref, process, Pid, _Reason} ->
+			runner_abnormal_down(Pid),
+			loop([FilesHead|FilesTail]);
 
 		Any ->
 			io:format("DEBUG !!!!!!!!!!! Received:~p~n",[Any]),

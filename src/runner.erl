@@ -29,7 +29,7 @@ setup_environment(RunnerNumber, ProjectFilePath, MasterNode) ->
   shell_command:run(ProjectFilePath, SetupScript ++ runner_identifier(RunnerNumber, MasterNode)).
 
 startup_ruby(RunnerNumber, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby " ++ ProjectFilePath ++ "/spec/curtis_spec.rb " ++ runner_identifier(RunnerNumber, MasterNode),
+	Cmd = "ruby " ++ ProjectFilePath ++ "/spec/distributest.rb " ++ runner_identifier(RunnerNumber, MasterNode),
   Port = open_port({spawn, Cmd}, [{packet, 4}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files

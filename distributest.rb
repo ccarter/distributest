@@ -6,7 +6,7 @@ require 'erlectricity'
 #Didn't seem to work by just setting env variable in the first place
 ENV["DB_PREFIX"] = ARGV[0]
 
-module WideTest
+module Distributest
   module Formatter
     
     require 'spec/runner/formatter/base_formatter'
@@ -41,7 +41,7 @@ module WideTest
   end
 end
 
-module WideTest
+module Distributest
   class TestRunner
 
     def run_rspec_file(file)
@@ -55,7 +55,7 @@ module WideTest
       output = []
       errors = []
       Spec::Runner.options.instance_variable_set(:@formatters, [
-        WideTest::Formatter::BasicFormat.new(
+        Distributest::Formatter::BasicFormat.new(
           output, errors
         )
       ])
@@ -87,7 +87,7 @@ end
 
 receive do |f|
   f.when([:file, String]) do |text|
-    pass_results, fail_results = WideTest::TestRunner.new.run_rspec_file(text)
+    pass_results, fail_results = Distributest::TestRunner.new.run_rspec_file(text)
     pass_results = mangle_output(pass_results)
     if (pass_results.nil? || pass_results.length == 0) && (fail_results.nil? || fail_results.length == 0)
       #f.send!([:no_results, text])

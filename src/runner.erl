@@ -1,6 +1,9 @@
 -module(runner).
 -compile(export_all).
 
+-define(RUNNER_SETUP_FILE, "distributest/runner_setup").
+-define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest.rb").
+
 master_monitor(MasterNode) ->
 	process_flag(trap_exit, true),
 	erlang:monitor(process, MasterNode).
@@ -25,11 +28,11 @@ runner_identifier(RunnerNumber, MasterNode) ->
 
 %%Note the ProjectFilePath is determined before the remote process is spawned. Going to change this
 setup_environment(RunnerNumber, ProjectFilePath, MasterNode) ->
-  SetupScript = "bash " ++ ProjectFilePath ++ "/spec/setup_environment.sh ",
+  SetupScript = "bash " ++ ProjectFilePath ++ "/" ++ ?RUNNER_SETUP_FILE ++ " ",
   shell_command:run(ProjectFilePath, SetupScript ++ runner_identifier(RunnerNumber, MasterNode)).
 
 startup_ruby(RunnerNumber, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby " ++ ProjectFilePath ++ "/spec/distributest.rb " ++ runner_identifier(RunnerNumber, MasterNode),
+	Cmd = "ruby " ++ ProjectFilePath ++ "/" ++ ?DISTRIBUTEST_RUBY_FILE ++ " " ++ runner_identifier(RunnerNumber, MasterNode),
   Port = open_port({spawn, Cmd}, [{packet, 4}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files

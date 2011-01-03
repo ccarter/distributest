@@ -1,7 +1,7 @@
 -module(configuration).
 -export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0]).
-%figure out where proper place for this is in final product. 
--define(CONF_FILE, "/Users/testadmin/distributed_testing/erlang/configuration/config.txt").
+
+-define(CONF_FILE, "distributest/config.txt").
 -record(settings, {hosts, remote_dir, test_files}).
 
 settings_from_file() ->

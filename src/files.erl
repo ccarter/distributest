@@ -2,6 +2,7 @@
 -include_lib("kernel/include/file.hrl").
 -export([test_files/0, file/2]).
 
+%%All the files to be ran. Can be multiple sets.Sorts per set(on size) not as 1 list
 test_files([], Files) -> lists:append(Files);
 test_files([FileGlobsHead|T], FilesAcc) ->
 	Files = filelib:wildcard(FileGlobsHead),
@@ -35,4 +36,5 @@ file(false, File) ->
 	configuration:remote_dir() ++ HostName ++ "/" ++ project:project_name() ++ FileMinusLocalPath ;
 file(Runner, File) ->
 	%check if Runner is local to determine file path
+	%TODO: I'm sure this is a horrible way of doing this
 	file(lists:member(Runner, processes()), File).

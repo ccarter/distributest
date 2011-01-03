@@ -9,18 +9,18 @@ start([H|T], Reporter, MasterPid) ->
   {{host, Host},{runner_count, RunnerCount}} = H,
   start(Host, RunnerCount, T, Reporter, MasterPid).
 	
-%local host
+%%local host
 start("127.0.0.1", RunnerCount, RemainingHosts, Reporter, MasterPid) ->
   io:format("Host: Local RunnerCount: ~p ~n", [RunnerCount]),
 %TODO remove once rsync testing locally is done
   spawn(fun() -> sync_files("127.0.0.1", RunnerCount, Reporter, MasterPid) end),
 	start(RemainingHosts, Reporter, MasterPid);
-%disabled host as RunnerCount is 0
+%%disabled host as RunnerCount is 0
 start(Host, 0, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p is set to 0 runners ~n", [Host]),
 	start(RemainingHosts, Reporter, MasterPid);
-%remote host
-%%TODO MOVE ALL THIS SETUP STUFF TO DIFF MODULE. Currently spawning a runner process locally
+%%remote host
+%%Currently spawning a runner process locally
 %%to setup and then it spawns the remote runner process on nodes.
 %%Also remove the runner process ProjectFilePath 's from being passed in and around
 start(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
@@ -28,7 +28,7 @@ start(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
   spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
 	start(RemainingHosts, Reporter, MasterPid).
  
-%TODO: See if I can move this down into start_runner
+%%TODO: See if I can move this down into start_runner
 sync_files(Host, RunnerCount, Reporter, MasterPid) ->
 	shell_command:rsync_local(),
   start_runner(Host, RunnerCount, Reporter, MasterPid).

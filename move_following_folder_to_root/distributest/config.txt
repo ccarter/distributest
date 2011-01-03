@@ -4,5 +4,5 @@
 %{test_files, "spec/**/*ipv4*_spec.rb"}.
 
 {{host, "127.0.0.1"},{runner_count, 2}}.
-{{host, "10.6.63.12"},{runner_count, 0}}.
+{{host, "10.6.63.12"},{runner_count, 1}}.
 

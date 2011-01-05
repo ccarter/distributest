@@ -14,16 +14,22 @@ module Distributest
     class BasicFormat < Spec::Runner::Formatter::BaseFormatter
       attr_accessor :output, :errors
       
-      def initialize(output, errors)
+      def initialize(output, errors, profile)
         @output = output
         @errors = errors
+        @profile = profile
       end
       
       def dump_summary(duration, example, failure, pending)
         #hiding summary atm
       end
       
-      def example_passed(proxy)
+      def example_started(example)
+        @time = Time.now
+      end
+      
+      def example_passed(example)
+        @profile << [example.description, Time.now - @time]
         output << '.'
       end
       
@@ -45,6 +51,7 @@ module Distributest
   class TestRunner
 
     def run_rspec_file(file)
+      start_time = Time.now
       begin
         require 'spec'
         
@@ -54,9 +61,11 @@ module Distributest
 
       output = []
       errors = []
+      profile = []
+      
       Spec::Runner.options.instance_variable_set(:@formatters, [
         Distributest::Formatter::BasicFormat.new(
-          output, errors
+          output, errors, profile
         )
       ])
       Spec::Runner.options.instance_variable_set(
@@ -74,8 +83,10 @@ module Distributest
       else
         Spec::Runner.options.run_examples
       end
+      end_time = Time.now
+      total_time_for_file = end_time - start_time
 
-      return output, errors
+      return output, errors, profile, total_time_for_file
     end
   end
 end
@@ -87,15 +98,17 @@ end
 
 receive do |f|
   f.when([:file, String]) do |text|
-    pass_results, fail_results = Distributest::TestRunner.new.run_rspec_file(text)
+    pass_results, fail_results, profile, total_time_for_file = Distributest::TestRunner.new.run_rspec_file(text)
     pass_results = mangle_output(pass_results)
+    #Basically letting master know it ran a file even though it didn't have runnable specs
     if (pass_results.nil? || pass_results.length == 0) && (fail_results.nil? || fail_results.length == 0)
-      #f.send!([:no_results, text])
       f.send!([:pass_results, "."])
     else
       f.send!([:pass_results, pass_results]) unless pass_results.nil? or pass_results.length == 0
       f.send!([:fail_results, fail_results]) unless fail_results.nil? or fail_results.length == 0
+      f.send!([:total_time_for_file, text, total_time_for_file])
     end
+    f.send!(:ready_for_file)
     f.receive_loop
   end
   

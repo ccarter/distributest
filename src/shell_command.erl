@@ -17,13 +17,13 @@ loop(Port, Data, Timeout) ->
     	throw(timeout)
     end.
 
-%TODO move rsync stuff to diff module
+%%TODO move rsync stuff to diff module
 rsync_remote(UserHost) ->
 	{ok, ProjectDir} = file:get_cwd(),
 	{ok, LocalHostname} = inet:gethostname(),
 	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ " " ++ UserHost ++ ":" ++ configuration:remote_dir() ++ LocalHostname).
 	
-%to remove after removing local rsyncing
+%%to remove after removing local rsyncing
 rsync_local() ->
 	{ok, ProjectDir} = file:get_cwd(),
 	{ok, LocalHostname} = inet:gethostname(),

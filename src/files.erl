@@ -1,17 +1,35 @@
 -module(files).
 -include_lib("kernel/include/file.hrl").
--export([test_files/0, file/2]).
+-export([test_files/0, file/2, potentially_slow_files/1]).
 
 %%All the files to be ran. Can be multiple sets.Sorts per set(on size) not as 1 list
 test_files([], Files) -> lists:append(Files);
 test_files([FileGlobsHead|T], FilesAcc) ->
 	Files = filelib:wildcard(FileGlobsHead),
-  SortedFiles = file_sort_on_size(Files),
+  SortedFiles = sort_for_size_and_complexity(Files),
   test_files(T, [SortedFiles|FilesAcc]).
 test_files() ->
 	FileGlobs = configuration:test_files_glob(),
 	test_files(FileGlobs, []).
 
+sort_for_size_and_complexity(Files) ->
+	SortedOnSize = file_sort_on_size(Files),
+	SlowFiles = potentially_slow_files(Files),
+	SortedOnSizeMinusSlow = SortedOnSize -- SlowFiles,
+	lists:append(SlowFiles, SortedOnSizeMinusSlow).
+	
+%%Specs like sould_behave_like should be ran first
+potentially_slow_files(Files) ->
+	potentially_slow_files(Files, []).
+potentially_slow_files([], SlowFiles) -> 
+  SlowFiles;
+potentially_slow_files([File|Files], SlowFiles) ->
+	{ok, ReadFile} = file:read_file(File),
+	MatchData = re:run(ReadFile, ".*should_behave_like.*"),
+	case MatchData of
+		{match, _Pos} -> potentially_slow_files(Files, [File|SlowFiles]);
+		nomatch -> potentially_slow_files(Files, SlowFiles)
+	end.
 	
 file_sort_on_size(Files) ->
   SizeFun = fun(A,B) -> file_size(A) =< file_size(B) end,

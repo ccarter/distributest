@@ -1,20 +1,27 @@
 -module(reporter).
--compile(export_all).
+-export([start/0]).
 
 start() ->
-	 spawn(fun() -> loop() end).
+	 spawn(fun() -> loop([]) end).
 
-loop() ->
+loop(TimePerFile) ->
 	receive
 		{pass_results, Text} ->
       io:format("~s", [Text]),
-      loop();
+      loop(TimePerFile);
 
     {fail_results, Text} ->
 	    io:format("~n  ~p~n", [Text]),
-	    loop();
+	    loop(TimePerFile);
+	  
+	  %TODO: log this to file
+	  {total_time_for_file, File, Time} ->
+		  loop([{File, Time} | TimePerFile]);
+%		  loop(TimePerFile);
 	
- 	  {shutdown, Caller} -> Caller ! {reporter_down, self()},
+ 	  {shutdown, Caller} -> 
+       io:format("~nTOTAL_TIME_PER_FILE~n~p",[TimePerFile]),
+      Caller ! reporter_down,
       exit('ShuttingDown')
 	      
 	end.

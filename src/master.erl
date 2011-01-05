@@ -27,11 +27,16 @@ shutdown_runners(Runners) ->
   receive
 	  {ready_for_file, Runner} ->
 		%TODO: Had some timing issues on shutdown, not sure if still needed
-		  timer:sleep(3000),
-		  %TODO: not really needed anymore
-		  ets:delete_object(runners, {runner, Runner}),
-		  exit(Runner, 'DONE'),
+%		  timer:sleep(3000),
+		  runner_stop(Runner),
+%		  ets:delete_object(runners, {runner, Runner}),
+%		  exit(Runner, 'DONE'),
 		  
+		  shutdown_runners(Runners -- [Runner]);
+		%TODO: bug that can occur if all files are being ran before a runner is setup. This is temp fix
+		{master_hostname, Runner} -> 
+		  runner_stop(Runner),
+		  exit(Runner, kill),
 		  shutdown_runners(Runners -- [Runner])
 	end.
 
@@ -42,9 +47,14 @@ ets_runner_list() ->
 master_hostname() -> 
 	{ok, Hostname} = inet:gethostname(),
 	Hostname.
+
+runner_stop(RunnerPid) ->
+	ets:delete_object(runners, {runner, RunnerPid}),
+	exit(RunnerPid, 'DONE').
 	
 %%Due to the multi process and async way I am starting runners I send a message back to master 
 %%when a runner is spawned.Currently only used to setup tracking
+%%TODO Not atomic.Need to redesign.Process is monitoring master as well so chance of hung Runners is small
 runner_up(RunnerPid) ->
 	ets:insert(runners, {runner, RunnerPid}), 
 	erlang:monitor(process, RunnerPid).

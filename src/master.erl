@@ -3,21 +3,25 @@
 
 start() ->
 	process_flag(trap_exit, true),
-  ets:new(runners, [bag, public, named_table]),
+  %ets:new(runners, [bag, public, named_table]),
 	register(master, self()),
 	Reporter = reporter:start(),
 	register(reporter, Reporter),
+	%Once node is prepped it sends master process {node_ready, Host, RunnerCount}. This starts runners
   runner_node_prep:start(Reporter, self()),
   run_files(),
 	self().
 	
 run_files() ->
 	FilesToRun = files:test_files(),
-	loop(FilesToRun).
+	loop(FilesToRun, [], []).
 
 run_file(Runner, File) ->
 	FileWithCorrectPath = files:file(Runner, File),
 	Runner ! {file, list_to_atom(FileWithCorrectPath)}.
+
+start_runners(Host, RunnerCount) ->	
+  runner:start_runners(Host, RunnerCount, whereis(reporter), self()).
 
 shutdown_runners([]) ->  
   io:format("~nDistributest done.~nHave a nice day.~n"),
@@ -26,12 +30,7 @@ shutdown_runners([]) ->
 shutdown_runners(Runners) ->
   receive
 	  {ready_for_file, Runner} ->
-		%TODO: Had some timing issues on shutdown, not sure if still needed
-%		  timer:sleep(3000),
-		  runner_stop(Runner),
-%		  ets:delete_object(runners, {runner, Runner}),
-%		  exit(Runner, 'DONE'),
-		  
+		  runner_stop(Runner),		  
 		  shutdown_runners(Runners -- [Runner]);
 		%TODO: bug that can occur if all files are being ran before a runner is setup. This is temp fix
 		{master_hostname, Runner} -> 
@@ -40,60 +39,59 @@ shutdown_runners(Runners) ->
 		  shutdown_runners(Runners -- [Runner])
 	end.
 
-ets_runner_list() ->
-  EtsRunnerList = ets:lookup(runners, runner),
-  [Runner || {runner, Runner} <- EtsRunnerList]. 
-
 master_hostname() -> 
 	{ok, Hostname} = inet:gethostname(),
 	Hostname.
 
 runner_stop(RunnerPid) ->
-	ets:delete_object(runners, {runner, RunnerPid}),
 	exit(RunnerPid, 'DONE').
 	
-%%Due to the multi process and async way I am starting runners I send a message back to master 
-%%when a runner is spawned.Currently only used to setup tracking
-%%TODO Not atomic.Need to redesign.Process is monitoring master as well so chance of hung Runners is small
-runner_up(RunnerPid) ->
-	ets:insert(runners, {runner, RunnerPid}), 
-	erlang:monitor(process, RunnerPid).
-	
 %%TODO log abnormal runner shutdowns
-%%Might want to rethink the halt as the first runner could die before the 2nd one is going
-runner_abnormal_down(check_if_any_left) ->
-	case ets_runner_list() == [] of
-		false -> ok;
-		true -> 
-		  io:format("All runners died abnormally"),
-		  halt()
-	end;
-runner_abnormal_down(RunnerPid) ->
-	ets:delete_object(runners, {runner, RunnerPid}),
-	runner_abnormal_down(check_if_any_left).
+runner_abnormal_down(remaining_runners, [], []) ->
+  io:format("All runners died abnormally"),
+  halt();
+runner_abnormal_down(remaining_runners, Runners, RunnerRefs) -> {Runners, RunnerRefs}.
+runner_abnormal_down(Ref, RunnerPid, Runners, RunnerRefs) ->
+  io:format("~nRUNNER ABNORMAL DOWN~p~n ", [RunnerPid] ),
+  {RemainingRunners, RemainingRunnerRefs} = remove_pid_ref(RunnerPid, Ref, Runners, RunnerRefs),
+	runner_abnormal_down(remaining_runners, RemainingRunners, RemainingRunnerRefs).
 	
-loop([]) -> 
-  shutdown_runners(ets_runner_list());
-loop([FilesHead|FilesTail]) ->
+remove_pid_ref(Pid, Ref, Pids, Refs) ->
+	{Pids -- [Pid], Refs -- [Ref]}.
+
+add_pid_ref(NewPids, NewRefs, Pids, Refs) ->
+  AppendedRefsList = lists:append(NewRefs, Refs),
+	AppendedPidsList = lists:append(NewPids, Pids),
+	{AppendedPidsList, AppendedRefsList}.
+		
+loop([], Runners, _RunnerRefs) -> 
+  shutdown_runners(Runners);
+loop([FilesHead|FilesTail], Runners, RunnerRefs) ->
 	receive
+		{node_ready, Host, RunnerCount} ->
+  		{NewRunners, NewRunnerRefs} = start_runners(Host, RunnerCount),
+      {AppendedRunnerList, AppendedRefsList} = add_pid_ref(NewRunners, NewRunnerRefs, Runners, RunnerRefs),
+			loop([FilesHead|FilesTail], AppendedRunnerList, AppendedRefsList);
+						
     {ready_for_file, Runner} ->
 	    run_file(Runner, FilesHead),
-	    loop(FilesTail);
+	    loop(FilesTail, Runners, RunnerRefs);
 	
 	  {master_hostname, RunnerPid} ->
 		  RunnerPid ! {master_hostname, master_hostname()},
-		  loop([FilesHead|FilesTail]);
+		  loop([FilesHead|FilesTail], Runners, RunnerRefs);
 		
-		{runner_up, RunnerPid} ->
-			runner_up(RunnerPid),
-			loop([FilesHead|FilesTail]);
-			
-		%For runner going down, may need to relook at better way if I ever monitor other types of processes
-		{'DOWN', _Ref, process, Pid, _Reason} ->
-			runner_abnormal_down(Pid),
-			loop([FilesHead|FilesTail]);
+		%Not really needed, but here incase a normal goes down normally before end of run
+		{'DOWN', Ref, process, Pid, normal} -> 
+		  {Runners1, RunnerRefs1} = remove_pid_ref(Pid, Ref, Runners, RunnerRefs),
+		  loop([FilesHead|FilesTail], Runners1, RunnerRefs1);
+		
+		%TODO: Tracking Refs for runners but not really using them
+		{'DOWN', Ref, process, Pid, _Reason} ->
+			{RemainingRunners, RemainingRunnerRefs} = runner_abnormal_down(Ref, Pid, Runners, RunnerRefs),
+			loop([FilesHead|FilesTail], RemainingRunners, RemainingRunnerRefs);
 
 		Any ->
 			io:format("DEBUG !!!!!!!!!!! Received:~p~n",[Any]),
-			loop([])
+			loop([], Runners, RunnerRefs)
 	end.

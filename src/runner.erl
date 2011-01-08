@@ -1,5 +1,5 @@
 -module(runner).
--compile(export_all).
+-export([start_runners/4]).
 
 -define(RUNNER_SETUP_FILE, "distributest/runner_setup").
 -define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest.rb").
@@ -7,9 +7,22 @@
 master_monitor(MasterNode) ->
 	process_flag(trap_exit, true),
 	erlang:monitor(process, MasterNode).
+	
+start_runners(Host, RunnerCount, Reporter, MasterPid) ->
+	start_runners(Host, RunnerCount, Reporter, MasterPid, [], []).
+start_runners(_,0,_,_, Runners, RunnerMonitorRefs) ->  
+  {Runners, RunnerMonitorRefs};
+start_runners(Host, RunnerCount, Reporter, MasterPid, Runners, RunnerMonitorRefs) ->
+	NodeName = runner_node_prep:node_name(Host),
+	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
+  {Runner, RunnerMonitorRef} = start(NodeName, MasterPid,  RunnerCount, Reporter, project:remote_path()), 
+  start_runners(Host, RunnerCount - 1, Reporter, MasterPid, [Runner|Runners],[RunnerMonitorRef|RunnerMonitorRefs]).
 
 start(Node, MasterNode, RunnerNumber, Reporter, ProjectFilePath) ->
-  spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) end).
+  Runner = spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) end),
+  %monitor from master
+  Ref = erlang:monitor(process, Runner),
+  {Runner, Ref}.
 
 setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
   MasterMonitorReference = master_monitor(MasterNode),
@@ -57,7 +70,7 @@ loop(X, Port, MasterNode, MasterMonitorReference, Reporter) ->
 			end,
 	    loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
 		 
-	  %master sends this message to here causing the file to be ran
+	  %runs this file
 	  %TODO relook at port_command vs bang
 	  {file, File} ->
 		  Payload = term_to_binary({file, atom_to_binary(File, latin1)}),

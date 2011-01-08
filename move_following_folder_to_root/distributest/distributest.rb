@@ -1,4 +1,4 @@
-###MOVE THIS TO YOUR RAILS APP/SPEC FOLDER
+### MOVE THIS TO YOUR RAILS APP/SPEC FOLDER
 require 'rubygems'
 require 'erlectricity'
 
@@ -111,7 +111,7 @@ receive do |f|
     f.send!(:ready_for_file)
     f.receive_loop
   end
-  
+  #stops the loop causing it to stop
   f.when(:stop) { f.send!([:port_shutdown, "normal"]) }
   
   f.when([:object, Any]) do |obj|

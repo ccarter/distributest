@@ -1,5 +1,5 @@
 -module(runner_node_prep).
--export([start/2]).
+-export([start/2, node_name/1]).
 -define(RSYNC_USER, "racker").
 
 %%Node prep then starts the runner process(s)
@@ -14,7 +14,7 @@ start([H|T], Reporter, MasterPid) ->
 start("127.0.0.1", RunnerCount, RemainingHosts, Reporter, MasterPid) ->
   io:format("Host: Local RunnerCount: ~p ~n", [RunnerCount]),
   %TODO remove once rsync testing locally is done
-  spawn(fun() -> sync_files("127.0.0.1", RunnerCount, Reporter, MasterPid) end),
+  spawn(fun() -> node_prep("127.0.0.1", RunnerCount, MasterPid) end),
 	start(RemainingHosts, Reporter, MasterPid);
 %%disabled host as RunnerCount is 0
 start(Host, 0, RemainingHosts, Reporter, MasterPid) ->
@@ -25,27 +25,23 @@ start(Host, 0, RemainingHosts, Reporter, MasterPid) ->
 %%to setup and then it spawns the remote runner process on nodes.
 start(Host, RunnerCount, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
-  spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
+  %spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
+  spawn(fun() -> node_prep(Host, RunnerCount, MasterPid) end),
 	start(RemainingHosts, Reporter, MasterPid).
+	
+node_prep(Host, RunnerCount, MasterPid) ->
+	sync_files(Host),
+	node_ready(Host, RunnerCount, MasterPid).
  
-%%TODO: See if I can move this down into start_runner
-sync_files("127.0.0.1", RunnerCount, Reporter, MasterPid) ->
-	shell_command:rsync_local(),
-  start_runner("127.0.0.1", RunnerCount, Reporter, MasterPid);
-sync_files(Host, RunnerCount, Reporter, MasterPid) ->
+sync_files("127.0.0.1") ->
+	shell_command:rsync_local();
+sync_files(Host) ->
 	UserHost = ?RSYNC_USER ++ "@" ++ Host,
-	shell_command:rsync_remote(UserHost),
-  start_runner(Host, RunnerCount, Reporter, MasterPid).
+	shell_command:rsync_remote(UserHost).
 
-start_runner(_,0,_,_) ->  
-  done;
-start_runner(Host, RunnerCount, Reporter, MasterPid) ->
-	NodeName = list_to_atom("runner" ++ "@" ++ Host),
-	io:format("Starting runner number: ~p on host: ~p~n", [RunnerCount, Host]),
-  RunnerPid = runner:start(NodeName, MasterPid,  RunnerCount, Reporter, project:remote_path()), 
-  MasterPid ! {runner_up, RunnerPid},  
+node_ready(Host, RunnerCount, MasterPid) ->
+	MasterPid ! {node_ready, Host, RunnerCount}.
 
-  start_runner(Host, RunnerCount - 1, Reporter, MasterPid).
-
-%%END NODE PREP
+node_name(Host) ->
+	list_to_atom("runner" ++ "@" ++ Host).
 

@@ -1,0 +1,13 @@
+{remote_dir, "/distributed_test"}.
+
+%%OPTIONAL
+{display_file_time_greater_than, 30}.
+{display_profile_time_greater_than, 3}.
+%%END OPTIONAL
+
+{{host, "127.0.0.1"},{runner_count, 2}}.
+{{host, "yogsothoth.dcx.rackspace.com"},{runner_count, 6}}.
+{{host, "chupacabra.dcx.rackspace.com"},{runner_count, 6}}.
+{{host, "azathoth.dcx.rackspace.com"},{runner_count, 1}}.
+{{host, "lachusa.dcx.rackspace.com"},{runner_count, 1}}.
+

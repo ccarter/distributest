@@ -2,7 +2,7 @@
 -export([run/2, rsync_remote/1, rsync_local/0]).
 
 run(Dir, Cmd) ->
-  run(Dir, Cmd, 60000).
+  run(Dir, Cmd, 120000).
 
 run(Dir, Cmd, Timeout) ->
   Port = erlang:open_port({spawn, Cmd}, [{cd, Dir}, exit_status]),

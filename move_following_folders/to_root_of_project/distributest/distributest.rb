@@ -107,6 +107,7 @@ receive do |f|
       f.send!([:pass_results, pass_results]) unless pass_results.nil? or pass_results.length == 0
       f.send!([:fail_results, fail_results]) unless fail_results.nil? or fail_results.length == 0
       f.send!([:total_time_for_file, text, total_time_for_file])
+      f.send!([:profile, profile])
     end
     f.send!(:ready_for_file)
     f.receive_loop

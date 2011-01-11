@@ -54,9 +54,9 @@ startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, Pro
 
   %tell the master we are ready to start running files
   MasterNode ! {ready_for_file, self()},
-  loop([], Port, MasterNode, MasterMonitorReference, Reporter).
+  loop(Port, MasterNode, MasterMonitorReference, Reporter).
 	
-loop(X, Port, MasterNode, MasterMonitorReference, Reporter) ->
+loop(Port, MasterNode, MasterMonitorReference, Reporter) ->
 	receive
 		%receives the results from the ruby process
 		{Port, {data, Data}} ->			
@@ -64,31 +64,33 @@ loop(X, Port, MasterNode, MasterMonitorReference, Reporter) ->
 		    {pass_results, Text} -> Reporter ! {pass_results, Text};
 			  {fail_results, Text} -> Reporter ! {fail_results, Text};
 			  {total_time_for_file, File, Time} -> Reporter ! {total_time_for_file, File, Time};
+			  {profile, File, Profile} -> Reporter ! {profile, File, Profile};
 			  {no_results, Text} -> io:format("~n No results for file: ~p", [Text]);
 			  ready_for_file -> MasterNode ! {ready_for_file, self()};
 			  {port_shutdown, _Text} -> stop()
 			end,
-	    loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
+	    loop(Port, MasterNode, MasterMonitorReference, Reporter);
 		 
 	  %runs this file
 	  %TODO relook at port_command vs bang
 	  {file, File} ->
 		  Payload = term_to_binary({file, atom_to_binary(File, latin1)}),
 		  port_command(Port, Payload),
-		  loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter);
 		 
 		%Master kills runner process this way when it's successfully completed
 		{'EXIT', _, 'DONE'} -> 
 		  stop_port(Port),
-		  loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter);
 		
 		%catches message from port processes during runner setup
-		{'EXIT', _Pid, normal} -> loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
+		{'EXIT', _Pid, normal} -> 
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter);
 		
 		%if the master is killed we use this to give the runner a clean exit
 		{'DOWN', MasterMonitorReference, process, _Pid, _Reason} -> 
       stop_port(Port),
-		  loop(X, Port, MasterNode, MasterMonitorReference, Reporter);
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter);
 		
 		%Grabbing ruby exits here and stopping the runner
 		{Port, {exit_status, _ExitNumber}} -> exit(rubydied);
@@ -96,7 +98,7 @@ loop(X, Port, MasterNode, MasterMonitorReference, Reporter) ->
 		%grab everything that doesn't match. FOR DEVELOPMENT DEBUGING
 		Any ->
 			io:format("Received:~p~n",[Any]),
-			loop(X, Port, MasterNode, MasterMonitorReference, Reporter)
+			loop(Port, MasterNode, MasterMonitorReference, Reporter)
 	end.
 	
 stop_port(Port) ->

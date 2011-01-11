@@ -1,0 +1,1 @@
+redo local stuff. Currently rsnycing even localy over ssh

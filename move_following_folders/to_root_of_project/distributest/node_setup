@@ -1,0 +1,3 @@
+#!/bin/bash
+#This file is ran after the rsync. Right before the runners are started
+bundle

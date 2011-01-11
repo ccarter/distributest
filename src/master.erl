@@ -3,7 +3,6 @@
 
 start() ->
 	process_flag(trap_exit, true),
-  %ets:new(runners, [bag, public, named_table]),
 	register(master, self()),
 	Reporter = reporter:start(),
 	register(reporter, Reporter),
@@ -23,10 +22,16 @@ run_file(Runner, File) ->
 start_runners(Host, RunnerCount) ->	
   runner:start_runners(Host, RunnerCount, whereis(reporter), self()).
 
-shutdown_runners([]) ->  
+shutdown_runners([]) ->
+	reporter ! {shutdown, self()},
+	receive
+		reporter_down -> ok
+	after 10000 ->
+		io:format("Timeout waiting for reporter to shutdown")
+	end,
   io:format("~nDistributest done.~nHave a nice day.~n"),
   halt();
-%TODO: maybee I should pass the runners around instead of getting them from ets
+
 shutdown_runners(Runners) ->
   receive
 	  {ready_for_file, Runner} ->

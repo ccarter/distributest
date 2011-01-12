@@ -1,0 +1,2 @@
+#!/bin/bash
+export DISTRIBUTEST_LOCAL_HOSTNAME=#PUT HOSTNAME HERE!!!!!

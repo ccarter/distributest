@@ -1,5 +1,5 @@
 -module(reporter).
--export([start/0, sort_profile/2]).
+-export([start/0]).
 
 start() ->
 	 spawn(fun() -> loop([],[]) end).

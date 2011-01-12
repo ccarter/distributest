@@ -2,7 +2,7 @@
 -export([start_runners/4]).
 
 -define(RUNNER_SETUP_FILE, "distributest/runner_setup").
--define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest.rb").
+-define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest_runner.rb").
 
 master_monitor(MasterNode) ->
 	process_flag(trap_exit, true),

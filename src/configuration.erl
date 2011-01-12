@@ -3,6 +3,7 @@
 
 -define(NODE_CONF_FILE, "/etc/distributest/node_config.txt").
 -define(TEST_CONF_FILE, "distributest/test_config.txt").
+%%Following are defaults that can be overridden in node_config.txt
 -define(PROFILE_TIME_GREATER_THAN, 1).
 -define(FILE_TIME_GREATER_THAN, 20).
 
@@ -24,7 +25,6 @@ default_settings() ->
 
 settings() ->
 	SettingsRecord = default_settings(),
-%	SettingsRecord = #settings{hosts=[],test_files=[]},
 	NodeSettings = settings_from_file(?NODE_CONF_FILE),
 	TestSettings = settings_from_file(?TEST_CONF_FILE),
 	settings(lists:append(NodeSettings, TestSettings), SettingsRecord).

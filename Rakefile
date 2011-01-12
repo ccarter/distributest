@@ -7,6 +7,7 @@ ERLC_FLAGS = "-I#{INCLUDE} +warn_unused_vars +warn_unused_import"
 SRC = FileList['src/*.erl']
 OBJ = SRC.pathmap("%{src,ebin}X.beam")
 CLEAN.include("ebin/*.beam")
+@install_destination = "/usr/local/distributest"
 
 directory 'ebin'
 
@@ -14,6 +15,31 @@ rule ".beam" =>  ["%{ebin,src}X.erl"] do |t|
   sh "erlc -pa ebin -W #{ERLC_FLAGS} -o ebin #{t.source}"
 end
 
+desc "Build Gem"
+directory 'gem'
+task "build_gem" do
+  cd "gem"
+  sh "gem build distributest.gemspec"
+end
+
+desc "Uninstall"
+task :uninstall do
+  puts "Removing files and folder from #{@install_destination}"
+  FileUtils.rm_rf(@install_destination)
+end
+
+desc "Install"
+task :install do
+  puts "Installing files to #{@install_destination}"
+  dirs_to_copy = ["bin/", "configuration/", "ebin/", "log4erl/"]
+  FileUtils.mkdir_p(@install_destination)
+  dirs_to_copy.each do |copy_dir|
+    FileUtils.cp_r(copy_dir, @install_destination)
+  end
+end
+
 desc "Compile"
-task :compile => ['ebin'] + OBJ
+task :compile => ['ebin'] + OBJ do
+  Rake::Task[:build_gem].invoke
+end
 task :default => :compile

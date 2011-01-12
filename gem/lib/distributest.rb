@@ -3,10 +3,14 @@ require 'erlectricity'
 require 'distributest/test_runner'
 
 #Setting the DB_PREFIX env variable off of first arg passed in to the exec process.
-ENV["DB_PREFIX"] = ARGV[0]
+#ENV["DB_PREFIX"] = ARGV[0]
 
 module Distributest
-  def self.start
+  def self.start(runner_identifier, options = {})
+    ENV["DB_PREFIX"] = runner_identifier
+    start_loop
+  end
+  def self.start_loop
     receive do |f|
       f.when([:file, String]) do |text|
         pass_results, fail_results, profile, total_time_for_file = Distributest::TestRunner.new.run_rspec_file(text)

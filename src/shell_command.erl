@@ -6,13 +6,13 @@ run(Dir, Cmd) ->
 
 run(Dir, Cmd, Timeout) ->
   Port = erlang:open_port({spawn, Cmd}, [{cd, Dir}, exit_status]),
-  loop(Port,[],Timeout).
+  loop(Cmd, Port,[],Timeout).
   
-loop(Port, Data, Timeout) ->
+loop(Cmd, Port, Data, Timeout) ->
   receive
-    {Port, {data, NewData}} -> loop(Port, Data++NewData, Timeout);
+    {Port, {data, NewData}} -> loop(Cmd, Port, Data++NewData, Timeout);
       {Port, {exit_status, 0}} -> Data;
-    	{Port, {exit_status, S}} -> throw({commandfailed, S})
+    	{Port, {exit_status, S}} -> throw({commandfailed, Cmd, S})
     after Timeout ->
     	throw(timeout)
     end.

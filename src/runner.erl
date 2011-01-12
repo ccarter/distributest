@@ -49,7 +49,8 @@ setup_environment(RunnerIdentifier, ProjectFilePath) ->
   shell_command:run(ProjectFilePath, SetupScript ++ RunnerIdentifier).
 
 startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby " ++ ProjectFilePath ++ "/" ++ ?DISTRIBUTEST_RUBY_FILE ++ " " ++ RunnerIdentifier,
+	%Cmd = "ruby " ++ ProjectFilePath ++ "/" ++ ?DISTRIBUTEST_RUBY_FILE ++ " " ++ RunnerIdentifier,
+	Cmd = "ruby -e \"require 'rubygems'; require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",
   Port = open_port({spawn, Cmd}, [{packet, 4}, {cd, ProjectFilePath}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files

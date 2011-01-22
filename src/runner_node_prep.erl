@@ -3,6 +3,10 @@
 -define(RSYNC_USER, "racker").
 -define(NODE_SETUP_FILE, "distributest/node_setup").
 
+%%% THIS DOES NOT KILL -9 THE NODE_PREP SCRIPT ON THE NODES LIKE RUNNER DOES
+%%% This is because this should not be setting up dbs or anything that can't just finish
+%%% even if the master process is killed
+
 start(Reporter, MasterPid) ->
 	start(configuration:runner_settings(), Reporter, MasterPid).
 start([], _, _) -> done;

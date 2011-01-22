@@ -28,7 +28,13 @@ task :uninstall do
   FileUtils.rm_rf(@install_destination)
 end
 
-desc "Install"
+desc "Install Gem"
+task :install_gem do
+  puts "Installing gem"
+  puts `gem install gem/distributest*.gem`
+end
+
+desc "Install" 
 task :install do
   puts "Installing files to #{@install_destination}"
   dirs_to_copy = ["bin/", "configuration/", "ebin/", "log4erl/"]
@@ -36,6 +42,11 @@ task :install do
   dirs_to_copy.each do |copy_dir|
     FileUtils.cp_r(copy_dir, @install_destination)
   end
+  FileUtils.ln_sf("#{@install_destination}/bin/master.sh", "#{@install_destination}/../bin/distributest")
+  FileUtils.ln_sf("#{@install_destination}/bin/runner.sh", "#{@install_destination}/../bin/start_distributest_vm")  
+  puts "!!!!!!!!!!!!!!!!!"
+  puts "You should install latest distributest gem as a non root user: rake install_gem"
+  puts "!!!!!!!!!!!!!!!!!"
 end
 
 desc "Compile"

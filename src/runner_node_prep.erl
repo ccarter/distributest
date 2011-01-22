@@ -1,5 +1,7 @@
 -module(runner_node_prep).
 -export([start/2, node_name/1]).
+-vsn("0.0.3").
+
 -define(RSYNC_USER, "racker").
 -define(NODE_SETUP_FILE, "distributest/node_setup").
 

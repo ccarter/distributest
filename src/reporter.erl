@@ -1,5 +1,6 @@
 -module(reporter).
 -export([start/0]).
+-vsn("0.0.3").
 
 start() ->
 	 spawn(fun() -> loop([],[]) end).

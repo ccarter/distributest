@@ -1,5 +1,6 @@
 -module(configuration).
 -export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0]).
+-vsn("0.0.3").
 
 -define(NODE_CONF_FILE, "/etc/distributest/node_config.txt").
 -define(TEST_CONF_FILE, "distributest/test_config.txt").

@@ -1,5 +1,6 @@
 -module(runner).
--export([start_runners/4]).
+-export([start_runners/4, version/0]).
+-vsn("0.0.3").
 
 -define(RUNNER_SETUP_FILE, "distributest/runner_setup").
 -define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest_runner.rb").
@@ -50,7 +51,7 @@ setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode) ->
   shell_command:run(ProjectFilePath, SetupScript ++ RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}).
 
 startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby -e \"require 'rubygems'; require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",
+	Cmd = "ruby -e \"require 'rubygems';gem 'distributest', '= " ++ version() ++ "';require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",
   Port = open_port({spawn, Cmd}, [{packet, 4}, {cd, ProjectFilePath}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files
@@ -102,7 +103,11 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
 			io:format("Received:~p~n",[Any]),
 			loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier)
 	end.
-		
+
+version() ->
+	{vsn, Version} = lists:keyfind(vsn, 1, ?MODULE:module_info(attributes)),
+	Version.
+	
 stop_port(Port) ->
   port_command(Port, term_to_binary('stop')).
 	

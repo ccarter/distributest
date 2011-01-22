@@ -1,6 +1,7 @@
 -module(files).
 -include_lib("kernel/include/file.hrl").
 -export([test_files/0, file/2, potentially_slow_files/1]).
+-vsn("0.0.3").
 
 %%All the files to be ran. Can be multiple sets.Sorts per set(on size) not as 1 list
 test_files([], Files) -> lists:append(Files);

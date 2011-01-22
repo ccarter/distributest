@@ -1,5 +1,6 @@
 -module(master).
 -export([start/0]).
+-vsn("0.0.3").
 
 start() ->
 	process_flag(trap_exit, true),

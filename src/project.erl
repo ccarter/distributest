@@ -1,5 +1,6 @@
 -module(project).
 -export([project_name/0, remote_path/0]).
+-vsn("0.0.3").
 
 %%Can not be called from remote runner because of cwd
 project_name() ->

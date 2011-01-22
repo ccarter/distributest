@@ -1,5 +1,7 @@
 -module(shell_command).
 -export([run/2, run/4, rsync_remote/1, rsync_local/0, kill_port_process/1]).
+-vsn("0.0.3").
+
 -define(TIMEOUT, 120000).
 
 run(Dir, Cmd) ->

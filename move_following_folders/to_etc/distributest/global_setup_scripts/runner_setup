@@ -1,0 +1,4 @@
+#!/bin/bash
+
+#This file is optional but if here will be copied to remote host and ran before each runner is started, but after the node_setup script(s)
+#You can use this to have defaults on all your projects without including any files in the project itself if it's not needed

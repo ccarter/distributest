@@ -1,5 +1,5 @@
 -module(shell_command).
--export([run/2, run/4, rsync_remote/1, rsync_local/0, kill_port_process/1]).
+-export([run/2, run/4, rsync_remote/1, rsync_local/0, kill_port_process/1, run_file_if_exists/2, run_file_if_exists_with_monitor/5]).
 -vsn("0.0.3").
 
 -define(TIMEOUT, 120000).
@@ -46,14 +46,30 @@ start_port(Cmd, Dir) ->
 kill_port_process(Identifier) ->
   os:cmd("ps aux | grep " ++ Identifier ++ " | grep -v grep | awk '{print $2}' | xargs kill -9 ").
 
+run_file_if_exists(ProjectFilePath, File) ->
+	FileInfo = file:read_file_info(File),
+	case FileInfo of
+		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
+		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File)
+	end.
+
+run_file_if_exists_with_monitor(ProjectFilePath, File, RunnerIdentifier, MonitorRef, Identifier) ->
+	FileInfo = file:read_file_info(File),
+	case FileInfo of
+		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
+		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier, MonitorRef, Identifier)
+	end.
+	
 %%TODO move rsync stuff to diff module
 rsync_remote(UserHost) ->
 	{ok, ProjectDir} = file:get_cwd(),
 	{ok, LocalHostname} = inet:gethostname(),
+	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ project:local_global_setup_scrip_path() ++ " " ++ UserHost ++ ":" ++ "/tmp/" ++ LocalHostname),
 	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ " " ++ UserHost ++ ":" ++ configuration:remote_dir() ++ LocalHostname).
 	
 %%to remove after removing local rsyncing
 rsync_local() ->
 	{ok, ProjectDir} = file:get_cwd(),
 	{ok, LocalHostname} = inet:gethostname(),
+	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ project:local_global_setup_scrip_path() ++ " " ++ "/tmp/" ++ LocalHostname),
 	run(ProjectDir, "rsync -r --exclude 'log' --exclude '.git' --delete " ++ ProjectDir ++ " " ++ configuration:remote_dir() ++ LocalHostname).

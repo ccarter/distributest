@@ -1,0 +1,6 @@
+#!/bin/bash
+
+#This file is optional but if here will be copied to remote host and ran before the projects node_setup script
+#You can use this to have defaults on all your projects without including any files in the project itself if it's not needed
+
+#Ran after rsync on each node

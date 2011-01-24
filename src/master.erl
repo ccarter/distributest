@@ -2,8 +2,11 @@
 -export([start/0]).
 -vsn("0.0.3").
 
+%-define(LOGFILEROOT, "/var/log").
+
 start() ->
 	process_flag(trap_exit, true),
+  start_logging(),
 	register(master, self()),
 	Reporter = reporter:start(),
 	register(reporter, Reporter),
@@ -12,6 +15,15 @@ start() ->
   run_files(),
 	self().
 	
+start_logging() ->
+	LogFile =  project:remote_path() ++ "/log/distributest.log",
+	error_logger:tty(false),
+  error_logger:logfile({open, LogFile}),
+	error_logger:info_msg("Starting test run").
+	
+stop_logging() ->
+	error_logger:logfile(close).
+			
 run_files() ->
 	FilesToRun = files:test_files(),
 	loop(FilesToRun, [], []).
@@ -31,6 +43,7 @@ shutdown_runners([]) ->
 		io:format("Timeout waiting for reporter to shutdown")
 	end,
   io:format("~nDistributest done.~nHave a nice day.~n"),
+  stop_logging(),
   halt();
 
 shutdown_runners(Runners) ->

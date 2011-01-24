@@ -2,7 +2,8 @@
 -export([start_runners/4, version/0]).
 -vsn("0.0.3").
 
--define(RUNNER_SETUP_FILE, "distributest/runner_setup").
+-define(RUNNER_SETUP_FILE1, "/runner_setup").
+-define(RUNNER_SETUP_FILE2, "distributest/runner_setup").
 -define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest_runner.rb").
 
 master_monitor(MasterNode) ->
@@ -20,15 +21,17 @@ start_runners(Host, RunnerCount, Reporter, MasterPid, Runners, RunnerMonitorRefs
   start_runners(Host, RunnerCount - 1, Reporter, MasterPid, [Runner|Runners],[RunnerMonitorRef|RunnerMonitorRefs]).
 
 start(Node, MasterNode, RunnerNumber, Reporter, ProjectFilePath) ->
-  Runner = spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) end),
+	%Need to get this before remote spawn because of hostname used in path
+	RunnerSetupFile1 = project:remote_global_setup_script_path() ++ ?RUNNER_SETUP_FILE1,
+  Runner = spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath, RunnerSetupFile1) end),
   %monitor from master
   Ref = erlang:monitor(process, Runner),
   {Runner, Ref}.
 
-setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath) ->
+setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath, RunnerSetupFile1) ->
   MasterMonitorReference = master_monitor(MasterNode),
   RunnerIdentifier = runner_identifier(RunnerNumber, MasterNode),
-  setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode),
+  setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode, RunnerSetupFile1),
   startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath).
   
 %%Gets hostname from master and removes non alpha numeric characters from it.
@@ -45,10 +48,12 @@ runner_identifier(RunnerNumber, MasterNode) ->
   lists:flatten(NormalizedHostName) ++ integer_to_list(RunnerNumber).
 
 %%Note the ProjectFilePath is determined before the remote process is spawned. Going to change this
-setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode) ->
+setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode, RunnerSetupFile1) ->
 	MasterMonitorRef = master_monitor(MasterNode),
-  SetupScript = "bash " ++ ProjectFilePath ++ "/" ++ ?RUNNER_SETUP_FILE ++ " ",
-  shell_command:run(ProjectFilePath, SetupScript ++ RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}).
+	%First run any global runner setup.This is copied from system initiating tests
+  shell_command:run_file_if_exists_with_monitor(ProjectFilePath, RunnerSetupFile1, RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}),
+  RunnerSetupFile2 = ProjectFilePath ++ "/" ++ ?RUNNER_SETUP_FILE2,
+  shell_command:run_file_if_exists_with_monitor(ProjectFilePath, RunnerSetupFile2, RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}).
 
 startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
 	Cmd = "ruby -e \"require 'rubygems';gem 'distributest', '= " ++ version() ++ "';require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",
@@ -76,6 +81,7 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
 	  %runs this file
 	  %TODO relook at port_command vs bang
 	  {file, File} ->
+		  error_logger:info_msg("RUNNER ~p: GOT FILE: ~p~n",[self(), File]),
 		  Payload = term_to_binary({file, atom_to_binary(File, latin1)}),
 		  port_command(Port, Payload),
 		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);

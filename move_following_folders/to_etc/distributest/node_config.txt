@@ -5,6 +5,9 @@
 {display_profile_time_greater_than, 3}.
 %%END OPTIONAL
 
+%%If you specify the test files here it can be overriden in a project/distributest/test_config.txt
+{test_files, "spec/**/*_spec.rb"}.
+
 {{host, "yogsothoth.dcx.rackspace.com"},{runner_count, 6}, {ssh_user, "blahuser"}}.
 {{host, "chupacabra.dcx.rackspace.com"},{runner_count, 6}}.
 {{host, "azathoth.dcx.rackspace.com"},{runner_count, 1}}.

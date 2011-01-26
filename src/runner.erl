@@ -81,7 +81,6 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
 	  %runs this file
 	  %TODO relook at port_command vs bang
 	  {file, File} ->
-		  error_logger:info_msg("RUNNER ~p: GOT FILE: ~p~n",[self(), File]),
 		  Payload = term_to_binary({file, atom_to_binary(File, latin1)}),
 		  port_command(Port, Payload),
 		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);

@@ -41,7 +41,7 @@ node_prep(Host, RunnerCount, SshUser, MasterPid) ->
 	spawn(node_name(Host), fun() -> node_prep_script(RemotePath, GlobalSetupScriptPath, MasterNodePrepPid) end),
 	receive
 		done_with_prep_script -> ok
-	after 120000 ->
+	after 190000 ->
 		io:format("Time out running node prep script"),
 		exit(timeoutnodeprepscript)
 	end,

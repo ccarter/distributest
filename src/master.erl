@@ -2,8 +2,6 @@
 -export([start/0]).
 -vsn("0.0.3").
 
-%-define(LOGFILEROOT, "/var/log").
-
 start() ->
 	process_flag(trap_exit, true),
   start_logging(),
@@ -16,7 +14,7 @@ start() ->
 	self().
 	
 start_logging() ->
-	LogFile =  project:remote_path() ++ "/log/distributest.log",
+	LogFile =  "/tmp/distributest.log",
 	error_logger:tty(false),
   error_logger:logfile({open, LogFile}),
 	error_logger:info_msg("Starting test run").
@@ -70,8 +68,9 @@ runner_abnormal_down(remaining_runners, [], []) ->
   io:format("All runners died abnormally"),
   halt();
 runner_abnormal_down(remaining_runners, Runners, RunnerRefs) -> {Runners, RunnerRefs}.
-runner_abnormal_down(Ref, RunnerPid, Runners, RunnerRefs) ->
-  io:format("~nRUNNER ABNORMAL DOWN~p~n ", [RunnerPid] ),
+runner_abnormal_down(Ref, RunnerPid, Reason, Runners, RunnerRefs) ->
+  io:format("~nRunner on ~p down: See log for more info~n ", [node(RunnerPid)] ),
+  error_logger:error_msg("Runner Died~nHost: ~p~nPid: ~p~nReason: ~p", [node(RunnerPid), RunnerPid, Reason]),
   {RemainingRunners, RemainingRunnerRefs} = remove_pid_ref(RunnerPid, Ref, Runners, RunnerRefs),
 	runner_abnormal_down(remaining_runners, RemainingRunners, RemainingRunnerRefs).
 	
@@ -106,8 +105,8 @@ loop([FilesHead|FilesTail], Runners, RunnerRefs) ->
 		  loop([FilesHead|FilesTail], Runners1, RunnerRefs1);
 		
 		%TODO: Tracking Refs for runners but not really using them
-		{'DOWN', Ref, process, Pid, _Reason} ->
-			{RemainingRunners, RemainingRunnerRefs} = runner_abnormal_down(Ref, Pid, Runners, RunnerRefs),
+		{'DOWN', Ref, process, Pid, Reason} ->
+			{RemainingRunners, RemainingRunnerRefs} = runner_abnormal_down(Ref, Pid, Reason, Runners, RunnerRefs),
 			loop([FilesHead|FilesTail], RemainingRunners, RemainingRunnerRefs);
 
 		Any ->

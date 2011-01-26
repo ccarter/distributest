@@ -2,7 +2,7 @@
 -export([run/2, run/4, rsync_remote/1, rsync_local/0, kill_port_process/1, run_file_if_exists/2, run_file_if_exists_with_monitor/5]).
 -vsn("0.0.3").
 
--define(TIMEOUT, 120000).
+-define(TIMEOUT, 180000).
 
 run(Dir, Cmd) ->
 	run(Dir, Cmd, ?TIMEOUT).
@@ -18,8 +18,12 @@ run(Dir, Cmd, {monitor, MonitorRef}, {identifier, ProcessIdentifier}) ->
 loop(Cmd, Port, Data, Timeout) ->
   receive
     {Port, {data, NewData}} -> loop(Cmd, Port, Data++NewData, Timeout);
-    {Port, {exit_status, 0}} -> Data;
-    {Port, {exit_status, S}} -> throw({commandfailed, Cmd, S})
+    {Port, {exit_status, 0}} -> 
+      log_results(0, Cmd, Data),    
+      Data;
+    {Port, {exit_status, S}} ->
+	    log_results(0, Cmd, Data),
+	    throw({commandfailed, Cmd, S})
   after Timeout ->
     throw(timeout)
   end.
@@ -31,8 +35,13 @@ loop(Cmd, Port, Data, Timeout) ->
 loop_with_monitor(Cmd, Port, Data, Timeout, MonitorRef, ProcessIdentifier) ->
   receive
     {Port, {data, NewData}} -> loop_with_monitor(Cmd, Port, Data++NewData, Timeout, MonitorRef, ProcessIdentifier);
-    {Port, {exit_status, 0}} -> Data;
-    {Port, {exit_status, S}} -> throw({commandfailed, Cmd, S});
+    {Port, {exit_status, 0}} -> 
+      log_results(0, Cmd, Data),
+      Data;
+    {Port, {exit_status, S}} -> 
+      log_results(S, Cmd, Data),
+      throw({commandfailed, Cmd, S});
+    %If Process calling this goes down kill the port forcefully
     {'DOWN', MonitorRef, process, _Pid, _Reason} -> 
       kill_port_process(ProcessIdentifier),
       exit(master_down)
@@ -60,6 +69,18 @@ run_file_if_exists_with_monitor(ProjectFilePath, File, RunnerIdentifier, Monitor
 		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier, MonitorRef, Identifier)
 	end.
 	
+log_results(0, Cmd, Data) ->
+	error_logger:info_msg("Shell Command Completed Successfully~n"
+	                       "Shell Command: ~s~n"
+                         "Results: ~n~s",
+                         [Cmd, Data]);
+log_results(ExitCode, Cmd, Data) ->
+	error_logger:error_msg("Shell Command Failed~n
+	 											  Exit Code: ~s~n
+												  Shell Command: ~s~n
+                          Results: ~n~s",
+                          [ExitCode, Cmd, Data]).
+
 %%TODO move rsync stuff to diff module
 rsync_remote(UserHost) ->
 	{ok, ProjectDir} = file:get_cwd(),

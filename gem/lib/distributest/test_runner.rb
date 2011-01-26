@@ -1,7 +1,21 @@
 require 'distributest/formatter'
 module Distributest
   class TestRunner
+    
+    def capture_output
+      @stdout = StringIO.new
+      @stderr = StringIO.new
+      $stderr = @stderr
+      $stdout = @stdout
+    end
+    
+    def captured_output
+      [@stdout.string, @stderr.string]
+    end
+    
     def run_rspec_file(file)
+      capture_output
+      
       start_time = Time.now
       begin
         require 'spec'
@@ -27,8 +41,10 @@ module Distributest
       end
       end_time = Time.now
       total_time_for_file = end_time - start_time
-
-      return output, errors, profile, total_time_for_file
+      
+      out, err = captured_output
+      
+      return output, errors, profile, total_time_for_file, out + err
     end
   end
 end

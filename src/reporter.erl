@@ -1,6 +1,6 @@
 -module(reporter).
 -export([start/0]).
--vsn("0.0.3").
+-vsn("0.0.4").
 
 start() ->
 	 spawn(fun() -> loop([],[]) end).
@@ -42,6 +42,10 @@ loop(TimePerFile, Profiles) ->
      
     {profile, File, Profile} ->
 	    loop(TimePerFile, [sort_profile(File, Profile) | Profiles]);
+	
+	  {captured_std_err_out, Text, RunnerPid} ->
+		  error_logger:info_msg("Output from ruby on ~p:~p~n~s", [node(RunnerPid), RunnerPid, Text]),
+		  loop(TimePerFile, Profiles);
 	
  	  {shutdown, Caller} -> 
        io:format("~nTOTAL_TIME_PER_FILE, Greater than ~p second(s): ~n~p",[configuration:display_file_time_greater_than(), sort_time_per_file(TimePerFile)]),

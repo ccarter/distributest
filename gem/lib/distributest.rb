@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'erlectricity'
 require 'distributest/test_runner'
-
+require 'stringio'
 #Setting the DB_PREFIX env variable off of first arg passed in to the exec process.
 #ENV["DB_PREFIX"] = ARGV[0]
 
@@ -10,10 +10,11 @@ module Distributest
     ENV["DB_PREFIX"] = runner_identifier
     start_loop
   end
+
   def self.start_loop
     receive do |f|
       f.when([:file, String]) do |text|
-        pass_results, fail_results, profile, total_time_for_file = Distributest::TestRunner.new.run_rspec_file(text)
+        pass_results, fail_results, profile, total_time_for_file, captured_std_err_out = Distributest::TestRunner.new.run_rspec_file(text)
         pass_results = pass_results.to_s
         #Basically letting master know it ran a file even though it didn't have runnable specs
         if (pass_results.nil? || pass_results.length == 0) && (fail_results.nil? || fail_results.length == 0)
@@ -23,6 +24,7 @@ module Distributest
           f.send!([:fail_results, fail_results]) unless fail_results.nil? or fail_results.length == 0
           f.send!([:total_time_for_file, text, total_time_for_file])
           f.send!([:profile, text, profile])
+          f.send!([:captured_std_err_out, captured_std_err_out]) unless captured_std_err_out == ""
         end
         f.send!(:ready_for_file)
         f.receive_loop

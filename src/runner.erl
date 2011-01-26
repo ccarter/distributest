@@ -1,6 +1,6 @@
 -module(runner).
 -export([start_runners/4, version/0]).
--vsn("0.0.3").
+-vsn("0.0.4").
 
 -define(RUNNER_SETUP_FILE1, "/runner_setup").
 -define(RUNNER_SETUP_FILE2, "distributest/runner_setup").
@@ -74,6 +74,7 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
 			  {profile, File, Profile} -> Reporter ! {profile, File, Profile};
 			  {no_results, Text} -> io:format("~n No results for file: ~p", [Text]);
 			  ready_for_file -> MasterNode ! {ready_for_file, self()};
+			  {captured_std_err_out, Text} -> Reporter ! {captured_std_err_out, Text, self()};
 			  {port_shutdown, _Text} -> stop()
 			end,
 	    loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);

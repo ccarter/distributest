@@ -59,27 +59,27 @@ run_file_if_exists(ProjectFilePath, File) ->
 	FileInfo = file:read_file_info(File),
 	case FileInfo of
 		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
-		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File)
+		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " 2>&1")
 	end.
 
 run_file_if_exists_with_monitor(ProjectFilePath, File, RunnerIdentifier, MonitorRef, Identifier) ->
 	FileInfo = file:read_file_info(File),
 	case FileInfo of
 		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
-		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier, MonitorRef, Identifier)
+		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier ++ " 2>&1", MonitorRef, Identifier)
 	end.
 	
 log_results(0, Cmd, Data) ->
 	error_logger:info_msg("Shell Command Completed Successfully~n"
-	                       "Shell Command: ~s~n"
-                         "Results: ~n~s",
-                         [Cmd, Data]);
+	                      "Shell Command: ~s~n"
+                        "Results: ~n~s~n",
+                        [Cmd, Data]);
 log_results(ExitCode, Cmd, Data) ->
-	error_logger:error_msg("Shell Command Failed~n
-	 											  Exit Code: ~s~n
-												  Shell Command: ~s~n
-                          Results: ~n~s",
-                          [ExitCode, Cmd, Data]).
+	error_logger:error_msg("Shell Command Failed~n"
+	                       "Exit Code: ~p~n"
+	                       "Shell Command: ~s~n"
+	                       "Results: ~n~s~n",
+                         [ExitCode, Cmd, Data]).
 
 %%TODO move rsync stuff to diff module
 rsync_remote(UserHost) ->

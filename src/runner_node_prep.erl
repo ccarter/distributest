@@ -17,9 +17,7 @@ start(Reporter, MasterPid) ->
 start([], _, _) -> done;
 start([H|T], Reporter, MasterPid) -> 
    start(H#node_settings.host, H#node_settings.runner_count, H#node_settings.ssh_user, T, Reporter, MasterPid).
-  %{{host, Host},{runner_count, RunnerCount}} = H,
-%  start(Host, RunnerCount, T, Reporter, MasterPid).
-	
+  
 %%disabled host as RunnerCount is 0
 start(Host, 0, _SshUser, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p is set to 0 runners ~n", [Host]),
@@ -29,11 +27,14 @@ start(Host, 0, _SshUser, RemainingHosts, Reporter, MasterPid) ->
 %%to setup and then it spawns the remote runner process on nodes.
 start(Host, RunnerCount, SshUser, RemainingHosts, Reporter, MasterPid) ->
 	io:format("Host: ~p RunnerCount: ~p ~n", [Host, RunnerCount]),
-  %spawn(fun() -> sync_files(Host, RunnerCount, Reporter, MasterPid) end),
   spawn(fun() -> node_prep(Host, RunnerCount, SshUser, MasterPid) end),
 	start(RemainingHosts, Reporter, MasterPid).
-	
+
 node_prep(Host, RunnerCount, SshUser, MasterPid) ->
+	case runner_vm_status(Host) of
+		up -> good;
+		down -> exit(normal)
+	end,
 	sync_files(Host, SshUser),
 	RemotePath = project:remote_path(),
 	GlobalSetupScriptPath = project:remote_global_setup_script_path(),
@@ -80,4 +81,23 @@ node_local(Host) ->
 	TokenHost = string:tokens(Host, "."),
 	[H|_T] = TokenHost,
 	H == Hostname.
+	
+%% Checked on each node when tests are started
+%% This does not preclude the tests from running on other nodes
+runner_vm_status(Host) ->
+	NodeName = node_name(Host),
+	case net_adm:ping(NodeName) of
+	  pong -> up;
+		pang ->
+		  log_runner_vm_down(NodeName), 
+	    down
+  end.
 
+log_runner_vm_down(NodeName) ->
+	io:format("**************************~n"
+	          "***Runner VM ~p is down~n"
+	          "***Check that your node_config.txt fully matches the name on the runner vm and that it's running~n"
+	          "**************************~n"
+	          ,[NodeName]),
+	error_logger:error_msg("Runner VM ~p is down~n"
+	                       "NOTE: If this was the only runner your tests aren't running", [NodeName]).

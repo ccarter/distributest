@@ -31,6 +31,10 @@ module Distributest
         errors << failure.exception.to_s
         errors << failure.exception.backtrace.to_s
       end
+      
+      def example_pending(example_proxy, message, deprecated_pending_location = nil)
+        output << '*'
+      end
 
       def dump_failure(counter, failure)
       end

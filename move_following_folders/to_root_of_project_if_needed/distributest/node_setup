@@ -1,6 +1,6 @@
 #!/bin/bash
 #This file is ran after the rsync. Right before the runners are started
 #This file is optional
-bundle
-#Temporary until gem is pushed
-cd distributest && gem install distributest
+
+##EXAMPLE
+#bundle

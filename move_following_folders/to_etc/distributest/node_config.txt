@@ -1,3 +1,7 @@
+%%%This is the main config for starting tests
+%%%This is erlang terms so the silly syntax must be copied
+
+%Directory that the project will be copied to.
 {remote_dir, "/distributed_test"}.
 
 %%OPTIONAL
@@ -8,8 +12,7 @@
 %%If you specify the test files here it can be overriden in a project/distributest/test_config.txt
 {test_files, "spec/**/*_spec.rb"}.
 
-{{host, "yogsothoth.dcx.rackspace.com"},{runner_count, 6}, {ssh_user, "blahuser"}}.
-{{host, "chupacabra.dcx.rackspace.com"},{runner_count, 6}}.
-{{host, "azathoth.dcx.rackspace.com"},{runner_count, 1}}.
-{{host, "lachusa.dcx.rackspace.com"},{runner_count, 1}}.
+{{host, "host1.distributest.com"},{runner_count, 6}, {ssh_user, "blahuser"}}.
+{{host, "host2.distributest.com"},{runner_count, 6}}.
+{{host, "host3.blah.com"},{runner_count, 1}}.
 

@@ -1,8 +1,6 @@
+require 'spec/runner/formatter/base_formatter'
 module Distributest
   module Formatter
-
-    require 'spec/runner/formatter/base_formatter'
-
     class BasicFormat < Spec::Runner::Formatter::BaseFormatter
       attr_accessor :output, :errors
 
@@ -26,10 +24,7 @@ module Distributest
       end
 
       def example_failed(example_proxy, counter, failure)
-        errors << 'F'
-        errors << failure.header.to_s
-        errors << failure.exception.to_s
-        errors << failure.exception.backtrace.to_s
+        errors << [failure.header.to_s, failure.exception.to_s, failure.exception.backtrace.join("\n")]
       end
       
       def example_pending(example_proxy, message, deprecated_pending_location = nil)

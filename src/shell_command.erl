@@ -22,10 +22,10 @@ loop(Cmd, Port, Data, Timeout) ->
       log_results(0, Cmd, Data),    
       Data;
     {Port, {exit_status, S}} ->
-	    log_results(0, Cmd, Data),
-	    throw({commandfailed, Cmd, S})
+	    log_results(S, Cmd, Data),
+	    exit(shell_command_failed)
   after Timeout ->
-    throw(timeout)
+      exit(shell_command_timeout)
   end.
 
 %% If run/4 is called this loop is used
@@ -40,13 +40,13 @@ loop_with_monitor(Cmd, Port, Data, Timeout, MonitorRef, ProcessIdentifier) ->
       Data;
     {Port, {exit_status, S}} -> 
       log_results(S, Cmd, Data),
-      throw({commandfailed, Cmd, S});
+ 	    exit(shell_command_failed);
     %If Process calling this goes down kill the port forcefully
     {'DOWN', MonitorRef, process, _Pid, _Reason} -> 
       kill_port_process(ProcessIdentifier),
       exit(master_down)
   after Timeout ->
-    throw(timeout)
+    exit(shell_command_timeout)
   end.
 
 start_port(Cmd, Dir) ->
@@ -59,14 +59,16 @@ run_file_if_exists(ProjectFilePath, File) ->
 	FileInfo = file:read_file_info(File),
 	case FileInfo of
 		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
-		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " 2>&1")
+		{ok, _Fileinfo} -> 
+  		shell_command:run(ProjectFilePath, "bash " ++ File ++ " 2>&1")
 	end.
 
 run_file_if_exists_with_monitor(ProjectFilePath, File, RunnerIdentifier, MonitorRef, Identifier) ->
 	FileInfo = file:read_file_info(File),
 	case FileInfo of
 		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
-		{ok, _Fileinfo} -> shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier ++ " 2>&1", MonitorRef, Identifier)
+		{ok, _Fileinfo} ->
+		  shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier ++ " 2>&1", MonitorRef, Identifier)
 	end.
 	
 log_results(0, Cmd, Data) ->

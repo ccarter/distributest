@@ -1,0 +1,9 @@
+#!/bin/bash
+#This is per runner
+#This file is optional
+
+##EXAMPLE
+#export RAILS_ENV=test
+#export DB_PREFIX=$1
+#rake db:create
+#rake db_steps

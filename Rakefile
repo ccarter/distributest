@@ -1,4 +1,4 @@
-#Copied from http://seangeo.blogspot.com/2007/09/building-erlang-with-rake.html
+#Parts copied from http://seangeo.blogspot.com/2007/09/building-erlang-with-rake.html
 require 'rake/clean'
 
 INCLUDE = "include"

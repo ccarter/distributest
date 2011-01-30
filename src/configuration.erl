@@ -1,8 +1,7 @@
 -module(configuration).
--export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0]).
--vsn("0.0.3").
+-export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0, user_for_current_host/0, node_settings_for_host/1]).
+-vsn("0.0.4").
 
--define(DEFAULT_SSH_USER, "racker").
 -define(NODE_CONF_FILE, "/etc/distributest/node_config.txt").
 -define(TEST_CONF_FILE, "distributest/test_config.txt").
 %%Following are defaults that can be overridden in node_config.txt
@@ -10,6 +9,9 @@
 -define(FILE_TIME_GREATER_THAN, 20).
 
 -include("includes/configuration.hrl").
+
+default_ssh_user() ->
+	os:getenv("USER").
 
 settings_from_file(File) ->
 	case file:consult(File) of
@@ -36,7 +38,7 @@ settings([], SettingsRecord) ->
 settings([H|T], SettingsRecord) ->
 	case H of
 		{{host, Host}, {runner_count, RunnerCount}} ->
-		  NodeSettings = #node_settings{host=Host,runner_count=RunnerCount,ssh_user=?DEFAULT_SSH_USER},
+		  NodeSettings = #node_settings{host=Host,runner_count=RunnerCount,ssh_user=default_ssh_user()},
  		  NewRecord = SettingsRecord#settings{hosts=[NodeSettings|SettingsRecord#settings.hosts]},
 		  settings(T, NewRecord);
 		{{host, Host}, {runner_count, RunnerCount}, {ssh_user, SshUser}} ->
@@ -60,6 +62,32 @@ settings([H|T], SettingsRecord) ->
 runner_settings() ->
   SettingsRecord = settings(),
   SettingsRecord#settings.hosts.
+
+user_for_current_host() ->
+  case node_settings_for_current_host() of
+	  {error, Error} -> {error, Error};
+	  {ok, NodeSettings} ->	
+	    {ok, NodeSettings#node_settings.ssh_user}
+	end.
+
+node_settings_for_current_host() ->
+  case os:getenv("DISTRIBUTEST_LOCAL_HOSTNAME") of
+  	false -> 
+      io:format("~nCouldn't find Environment Variable ~p, so can't lookup node_settings~n", ["DISTRIBUTEST_LOCAL_HOSTNAME"]),
+      {error, could_not_find_env_variable};
+    Host -> case node_settings_for_host(Host) of
+	            {error, Error} -> {error, Error};
+	            {ok, Res} -> {ok, Res}
+	          end
+  end.
+	
+node_settings_for_host(Host) ->
+	case lists:keysearch(Host, #node_settings.host, runner_settings()) of
+		false -> 
+		  io:format("~nNode Settings for Host:~p not found.~n", [Host]),
+		  {error, node_settings_not_found_for_host};
+		{value, Record} -> {ok, Record}
+	end.
 
 remote_dir() ->
 	SettingsRecord = settings(),

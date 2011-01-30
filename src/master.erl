@@ -23,12 +23,11 @@ stop_logging() ->
 	error_logger:logfile(close).
 			
 run_files() ->
-	FilesToRun = files:test_files(),
+	FilesToRun = files:sorted_test_files(),
 	loop(FilesToRun, [], []).
 
 run_file(Runner, File) ->
-	FileWithCorrectPath = files:file(Runner, File),
-	Runner ! {file, list_to_atom(FileWithCorrectPath)}.
+	Runner ! {file, list_to_atom(File)}.
 
 start_runners(Host, RunnerCount) ->	
   runner:start_runners(Host, RunnerCount, whereis(reporter), self()).

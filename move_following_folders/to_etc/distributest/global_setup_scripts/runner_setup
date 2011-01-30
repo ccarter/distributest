@@ -1,4 +1,16 @@
 #!/bin/bash
 
 #This file is optional but if here will be copied to remote host and ran before each runner is started, but after the node_setup script(s)
-#You can use this to have defaults on all your projects without including any files in the project itself if it's not needed
+#You can use this (over having this file in project/distributest/) to have defaults on all your projects without including any files in the project
+#This scripts first argument is the runner identifier. This is based on a normalized host name of the box initiating the tests + the runner number
+#This is used to have different databases per runner per box. You will need to edit you database.yml if it's a rails project.
+#ie. database.yml
+#test:
+#  <<: *defaults
+#  database: <%= ENV["DB_PREFIX"]%>distributest_test
+
+##EXAMPLE
+#export RAILS_ENV=test
+#export DB_PREFIX=$1
+#rake db:create
+#rake db:migrate

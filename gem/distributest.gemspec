@@ -11,7 +11,9 @@ Gem::Specification.new do |s|
   s.email       = ["curtis@rubyhq.com"]
   s.homepage    = "http://github.com/ccarter/distributest"
   s.summary     = "Ruby component of the Erlang based distributed test runner"
-  s.description = "Uses erlectricity to communicate with the Distributest Erlang application"
+  s.description = "Uses erlectricity to communicate with the distributest Erlang application"
+
+  s.add_dependency("erlectricity", ">= 1.1.1")
  
   s.required_rubygems_version = ">= 1.3.6"
  

@@ -10,7 +10,7 @@
 
 %%% THIS DOES NOT KILL -9 THE NODE_PREP SCRIPT ON THE NODES LIKE RUNNER DOES
 %%% This is because this should not be setting up dbs or anything that can't just finish
-%%% even if the master process is killed
+%%% Will probably change in the future
 
 start(Reporter, MasterPid) ->
 	start(configuration:runner_settings(), Reporter, MasterPid).
@@ -39,7 +39,7 @@ node_prep(Host, RunnerCount, SshUser, MasterPid) ->
 	RemotePath = project:remote_path(),
 	GlobalSetupScriptPath = project:remote_global_setup_script_path(),
 	MasterNodePrepPid = self(),
-	spawn(node_name(Host), fun() -> node_prep_script(RemotePath, GlobalSetupScriptPath, MasterNodePrepPid) end),
+	spawn_link(node_name(Host), fun() -> node_prep_script(RemotePath, GlobalSetupScriptPath, MasterNodePrepPid) end),
 	receive
 		done_with_prep_script -> ok
 	after 190000 ->

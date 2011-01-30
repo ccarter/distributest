@@ -1,6 +1,6 @@
 -module(runner).
 -export([start_runners/4, version/0]).
--vsn("0.0.4").
+-vsn("0.0.5").
 
 -define(RUNNER_SETUP_FILE1, "/runner_setup").
 -define(RUNNER_SETUP_FILE2, "distributest/runner_setup").

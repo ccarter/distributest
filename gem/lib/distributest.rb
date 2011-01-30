@@ -2,8 +2,6 @@ require 'rubygems'
 require 'erlectricity'
 require 'distributest/test_runner'
 require 'stringio'
-#Setting the DB_PREFIX env variable off of first arg passed in to the exec process.
-#ENV["DB_PREFIX"] = ARGV[0]
 
 module Distributest
   def self.start(runner_identifier, options = {})

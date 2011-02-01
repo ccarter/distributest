@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>reporter</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>reporter.xml</file></header>
+<module>reporter</module>
+<modulesummary>Handles the output of tests.</modulesummary>
+<description>
+<p>Handles the output of tests. <br/></p></description>
+<funcs>
+<func>
+<name>start() -&gt; term()
+</name>
+<fsummary>Immediately spawns a new process and goes into loop.</fsummary>
+
+<desc><marker id="start-0"/>
+
+<p>Immediately spawns a new process and goes into loop</p>
+</desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

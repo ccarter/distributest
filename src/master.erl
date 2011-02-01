@@ -1,7 +1,14 @@
+%% @author Curtis Carter <curtis@rubyhq.com>. 
+%% @doc Handles the startup of all other processes
+%% This is the central part of the application.  During a test run the primary responsibility
+%% is to start the runners and then give them the files to be ran.<br/>
+%% The vm that starts this will be halted when the tests are finished or the user kills it
+
 -module(master).
 -export([start/0]).
 -vsn("0.0.3").
 
+%% @doc Starts the logger, reporter, and node preparation processes
 start() ->
 	process_flag(trap_exit, true),
   start_logging(),

@@ -1,3 +1,8 @@
+%% @author Curtis Carter <curtis@rubyhq.com>. 
+%% @doc Prepares all the nodes participating in the distributed test before the runners are spawned<br/>
+%% There are 1 process per node spawned on the system initiating the tests. 
+%% This rsycs all the files to each node. Then a process is spawned on each remote node and they run the node_setup script in the project directory
+
 -module(runner_node_prep).
 -export([start/2, node_name/1]).
 -vsn("0.0.3").
@@ -8,10 +13,15 @@
 -define(NODE_SETUP_FILE1, "/node_setup").
 -define(NODE_SETUP_FILE2, "distributest/node_setup").
 
-%%% THIS DOES NOT KILL -9 THE NODE_PREP SCRIPT ON THE NODES LIKE RUNNER DOES
-%%% This is because this should not be setting up dbs or anything that can't just finish
-%%% Will probably change in the future
+%% THIS DOES NOT KILL -9 THE NODE_PREP SCRIPT ON THE NODES LIKE RUNNER DOES
+%% Will probably change in the future
 
+%% @todo Not sure what this returns
+%% @spec start(Reporter, MasterPid) -> nil()
+%% where Reporter = pid()
+%%       MasterPid = pid()
+%%
+%% @doc Looks up the configuration for a node and spawns a local process that preps it
 start(Reporter, MasterPid) ->
 	start(configuration:runner_settings(), Reporter, MasterPid).
 start([], _, _) -> done;
@@ -72,6 +82,11 @@ node_prep_script(ProjectFilePath, GlobalSetupScriptPath, MasterPrepProcess) ->
 node_ready(Host, RunnerCount, MasterPid) ->
 	MasterPid ! {node_ready, Host, RunnerCount}.
 
+%% @spec node_name(Host) -> RemoteVmName
+%% where Host = string()
+%%       RemoteVmName = string()
+%%
+%% @doc Takes a host name and returns what the remote vm name should be
 node_name(Host) ->
 	list_to_atom("runner" ++ "@" ++ Host).
 

@@ -1,3 +1,6 @@
+%% @author Curtis Carter <curtis@rubyhq.com>. 
+%% @doc Handles the configuration files.
+
 -module(configuration).
 -export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0, user_for_current_host/0, node_settings_for_host/1]).
 -vsn("0.0.4").
@@ -10,9 +13,13 @@
 
 -include("includes/configuration.hrl").
 
+%% Use the local user for sshing into remote nodes be default.
+%% This is overriden by node_config.txt if the {ssh_user, String} is present
 default_ssh_user() ->
 	os:getenv("USER").
 
+%% @doc Loads the settings from the file.<br/> 
+%% File must be valid erlang terms.
 settings_from_file(File) ->
 	case file:consult(File) of
 	{ok, X} ->
@@ -24,9 +31,12 @@ settings_from_file(File) ->
 		{error, Other}
 	end.
 
+%% Creates a settings record that has the defaults to be used
 default_settings() ->
 	#settings{hosts=[],test_files=[],display_file_time_greater_than=?FILE_TIME_GREATER_THAN,display_profile_time_greater_than=?PROFILE_TIME_GREATER_THAN}.
 
+%% @doc Uses a settings record and loads entire node_config.txt into it
+%% @todo Currently removed support for overriding config per application. Need to add this back in
 settings() ->
 	SettingsRecord = default_settings(),
 	NodeSettings = settings_from_file(?NODE_CONF_FILE),
@@ -59,6 +69,7 @@ settings([H|T], SettingsRecord) ->
 		  settings(T, NewRecord)
 	end.
 	
+%% @doc Returns list of node_settings records for each node in node_config.txt
 runner_settings() ->
   SettingsRecord = settings(),
   SettingsRecord#settings.hosts.
@@ -89,19 +100,28 @@ node_settings_for_host(Host) ->
 		{value, Record} -> {ok, Record}
 	end.
 
+%% @doc Returns the remote directory that is going to be used to copy the Ruby project into
 remote_dir() ->
 	SettingsRecord = settings(),
 	SettingsRecord#settings.remote_dir ++ "/".
 	
+%% @doc Returns int with configured time in seconds X of what files to show at the
+%% end of the test run whos time was greater than X <br/>
+%% This is defaulted in this module so the tuple is not required in the node_config.txt
 display_file_time_greater_than() ->
 	SettingsRecord = settings(),
 	SettingsRecord#settings.display_file_time_greater_than.
 	
+%% @doc Returns int with configured time in seconds X of what tests to show at the
+%% end of the test run whos time was greater than X <br/>
+%% This is defaulted in this module so the tuple is not required in the node_config.txt
 display_profile_time_greater_than() ->
 	SettingsRecord = settings(),
 	SettingsRecord#settings.display_profile_time_greater_than.
 	
-%%If the project has TEST_CONF_FILE it overrides the one in NODE_CONF_FILE
+%% @doc Returns a string that's expected to be a glob of what tests to run <br/>
+%% If the project has a distributest/node_config.txt it will override this <br/>
+%% This allows per project selection of tests to run.
 test_files_glob() ->
 	FileInfo = file:read_file_info(?TEST_CONF_FILE),
 	SettingsRecord = case FileInfo of

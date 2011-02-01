@@ -1,3 +1,9 @@
+%% @author Curtis Carter <curtis@rubyhq.com>. 
+%% @doc Handles the Ruby to Erlang communication and forwards messages to master and reporter process<br/>
+%% Multiple processes using this module will be on each node <br/>
+%% The version of this module is tied to the version of the Distributest gem.
+%% The runner process using this module also handles setting up the runner before going into it's loop ie. runner_setup script
+
 -module(runner).
 -export([start_runners/4, version/0]).
 -vsn("0.0.5").
@@ -10,6 +16,15 @@ master_monitor(MasterNode) ->
 	process_flag(trap_exit, true),
 	erlang:monitor(process, MasterNode).
 	
+%% @spec start_runners(Host, RunnerCount, Reporter, MasterPid) -> {Runners, RunnerMonitorRefs}
+%% where Host = string()
+%%       RunnerCount = integer()
+%%       Reporter = pid()
+%%       MasterPid = pid()
+%%       Runners = [pid()]
+%%       RunnerMonitorRefs = [reference()]
+%%
+%% @doc Spaws runner process * RunnerCount
 start_runners(Host, RunnerCount, Reporter, MasterPid) ->
 	start_runners(Host, RunnerCount, Reporter, MasterPid, [], []).
 start_runners(_,0,_,_, Runners, RunnerMonitorRefs) ->  
@@ -110,6 +125,8 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
 			loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier)
 	end.
 
+%% @doc returns current version of this module <br/>
+%% Used to determine what version of Distributest gem to load
 version() ->
 	{vsn, Version} = lists:keyfind(vsn, 1, ?MODULE:module_info(attributes)),
 	Version.

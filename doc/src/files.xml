@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>files</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>files.xml</file></header>
+<module>files</module>
+<modulesummary>Handles the finding/sorting/logging of test files.</modulesummary>
+<description>
+<p>Handles the finding/sorting/logging of test files</p></description>
+<funcs>
+<func>
+<name>file(Runner, File) -&gt; string()</name>
+<fsummary>Returns full path of where the file will be.</fsummary>
+<type>
+<v>Runner = string()</v><v>File = string()</v></type>
+<desc><marker id="file-2"/>
+
+<p>Returns full path of where the file will be.<br/>
+  Currently not differentiating between local and remote runners.</p>
+</desc></func>
+<func>
+<name>get_logged_file_time() -&gt; list()</name>
+<fsummary>Gets all files and the previous run time from Dets.</fsummary>
+
+<desc><marker id="get_logged_file_time-0"/>
+
+<p>Gets all files and the previous run time from Dets<br/>
+  This includes all projects that have been tested</p>
+</desc></func>
+<func>
+<name>log_file_time(FilesTime) -&gt; ok | {error, Reason}</name>
+<fsummary>Logs list of files and the time it took them to run.</fsummary>
+<type>
+<v>FilesTime = [{binary() | string(), float()}]</v></type>
+<desc><marker id="log_file_time-1"/>
+
+<p>Logs list of files and the time it took them to run<br/>
+  Used to sort files later on</p>
+</desc></func>
+<func>
+<name>sorted_files_per_historic_time() -&gt; List</name>
+<fsummary>Grabs previous run from dets and sorts files on time.</fsummary>
+<type>
+<v>List = [string()]</v></type>
+<desc><marker id="sorted_files_per_historic_time-0"/>
+
+<p>Grabs previous run from dets and sorts files on time.
+  Converts the files from binary to list</p>
+</desc></func>
+<func>
+<name>sorted_test_files() -&gt; term()
+</name>
+<fsummary>Returns list of files(String) that are sorted first of the previous run from the box they.</fsummary>
+
+<desc><marker id="sorted_test_files-0"/>
+
+<p>Returns list of files(String) that are sorted first of the previous run from the box they <br/>
+  are being ran from again. Slowest files are first so you are not waiting on a slow file that started late<br/>
+  Next, The remaining files are sorted by the inclusion of shared specs and then size of file
+  and appended to the end of the first list <br/>
+  NOTE: The algorithm for files that have never been run will probably go away as this is not really needed anymore.</p>
+</desc></func>
+<func>
+<name>test_files() -&gt; term()
+</name>
+<fsummary>Takes the file glob(s) and finds all files to be ran.</fsummary>
+
+<desc><marker id="test_files-0"/>
+
+<p>Takes the file glob(s) and finds all files to be ran.
+  Can take multiple globs however I am not making them unique currently<br/></p>
+</desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

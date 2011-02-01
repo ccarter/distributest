@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>configuration</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>configuration.xml</file></header>
+<module>configuration</module>
+<modulesummary>Handles the configuration files.</modulesummary>
+<description>
+<p>Handles the configuration files.</p></description>
+<funcs>
+<func>
+<name>display_file_time_greater_than() -&gt; term()
+</name>
+<fsummary>Returns int with configured time in seconds X of what files to show at the
+  end of the test run whos time was greater than X.</fsummary>
+
+<desc><marker id="display_file_time_greater_than-0"/>
+
+<p>Returns int with configured time in seconds X of what files to show at the
+  end of the test run whos time was greater than X <br/>
+  This is defaulted in this module so the tuple is not required in the node_config.txt</p>
+</desc></func>
+<func>
+<name>display_profile_time_greater_than() -&gt; term()
+</name>
+<fsummary>Returns int with configured time in seconds X of what tests to show at the
+  end of the test run whos time was greater than X.</fsummary>
+
+<desc><marker id="display_profile_time_greater_than-0"/>
+
+<p>Returns int with configured time in seconds X of what tests to show at the
+  end of the test run whos time was greater than X <br/>
+  This is defaulted in this module so the tuple is not required in the node_config.txt</p>
+</desc></func>
+<func>
+<name>node_settings_for_host(Host) -&gt; term()
+</name>
+<fsummary> </fsummary>
+
+<desc><marker id="node_settings_for_host-1"/>
+ </desc></func>
+<func>
+<name>remote_dir() -&gt; term()
+</name>
+<fsummary>Returns the remote directory that is going to be used to copy the Ruby project into.</fsummary>
+
+<desc><marker id="remote_dir-0"/>
+
+<p>Returns the remote directory that is going to be used to copy the Ruby project into</p>
+</desc></func>
+<func>
+<name>runner_settings() -&gt; term()
+</name>
+<fsummary>Returns list of node_settings records for each node in node_config.txt.</fsummary>
+
+<desc><marker id="runner_settings-0"/>
+
+<p>Returns list of node_settings records for each node in node_config.txt</p>
+</desc></func>
+<func>
+<name>settings() -&gt; term()
+</name>
+<fsummary>Uses a settings record and loads entire node_config.txt into it.</fsummary>
+
+<desc><marker id="settings-0"/>
+
+<p>Uses a settings record and loads entire node_config.txt into it</p>
+</desc></func>
+<func>
+<name>settings_from_file(File) -&gt; term()
+</name>
+<fsummary>Loads the settings from the file.</fsummary>
+
+<desc><marker id="settings_from_file-1"/>
+
+<p>Loads the settings from the file.<br/>
+  File must be valid erlang terms.</p>
+</desc></func>
+<func>
+<name>test_files_glob() -&gt; term()
+</name>
+<fsummary>Returns a string that's expected to be a glob of what tests to run.</fsummary>
+
+<desc><marker id="test_files_glob-0"/>
+
+<p>Returns a string that's expected to be a glob of what tests to run <br/>
+  If the project has a distributest/node_config.txt it will override this <br/>
+  This allows per project selection of tests to run.</p>
+</desc></func>
+<func>
+<name>user_for_current_host() -&gt; term()
+</name>
+<fsummary> </fsummary>
+
+<desc><marker id="user_for_current_host-0"/>
+ </desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

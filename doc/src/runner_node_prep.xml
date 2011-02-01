@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>runner_node_prep</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>runner_node_prep.xml</file></header>
+<module>runner_node_prep</module>
+<modulesummary>Prepares all the nodes participating in the distributed test before the runners are spawned.</modulesummary>
+<description>
+<p>Prepares all the nodes participating in the distributed test before the runners are spawned<br/>
+  There are 1 process per node spawned on the system initiating the tests.
+  This rsycs all the files to each node. Then a process is spawned on each remote node and they run the node_setup script in the project directory</p></description>
+<funcs>
+<func>
+<name>node_name(Host) -&gt; RemoteVmName</name>
+<fsummary>Takes a host name and returns what the remote vm name should be.</fsummary>
+<type>
+<v>Host = string()</v><v>RemoteVmName = string()</v></type>
+<desc><marker id="node_name-1"/>
+
+<p>Takes a host name and returns what the remote vm name should be</p>
+</desc></func>
+<func>
+<name>start(Reporter, MasterPid) -&gt; nil()</name>
+<fsummary>Looks up the configuration for a node and spawns a local process that preps it.</fsummary>
+<type>
+<v>Reporter = pid()</v><v>MasterPid = pid()</v></type>
+<desc><marker id="start-2"/>
+
+<p>Looks up the configuration for a node and spawns a local process that preps it</p>
+</desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

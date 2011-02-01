@@ -1,7 +1,11 @@
+%% @author Curtis Carter <curtis@rubyhq.com>. 
+%% @doc Handles the output of tests. <br/>
+
 -module(reporter).
 -export([start/0]).
 -vsn("0.0.5").
 
+%% @doc Immediately spawns a new process and goes into loop
 start() ->
 	 spawn(fun() -> loop([],[]) end).
 	
@@ -28,11 +32,14 @@ remove_empty_profiles(Profiles) ->
 
 failed_message([]) -> ok;
 failed_message([Error|Errors]) ->
-	{Message, Results, Exception} = Error,
-	io:format("~n~p~n~s~n~s~n", 
-		        [binary_to_list(Message), 
-			       binary_to_list(Results),
-			  		 binary_to_list(Exception)]),
+	case Error of
+  	{Message, Results, Exception} ->
+    	io:format("~n~p~n~s~n~s~n", 
+		           [binary_to_list(Message), 
+    			      binary_to_list(Results),
+			  	   	  binary_to_list(Exception)]);
+		Any -> io:format("~n~s~n", [Any])
+	end,
 	failed_message(Errors).
 	
 loop(TimePerFile, Profiles) ->

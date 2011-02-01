@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>runner</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>runner.xml</file></header>
+<module>runner</module>
+<modulesummary>Handles the Ruby to Erlang communication and forwards messages to master and reporter process.</modulesummary>
+<description>
+<p>Handles the Ruby to Erlang communication and forwards messages to master and reporter process<br/>
+  Multiple processes using this module will be on each node <br/>
+  The version of this module is tied to the version of the Distributest gem.
+  The runner process using this module also handles setting up the runner before going into it's loop ie. runner_setup script</p></description>
+<funcs>
+<func>
+<name>start_runners(Host, RunnerCount, Reporter, MasterPid) -&gt; {Runners, RunnerMonitorRefs}</name>
+<fsummary>Spaws runner process * RunnerCount.</fsummary>
+<type>
+<v>Host = string()</v><v>RunnerCount = integer()</v><v>Reporter = pid()</v><v>MasterPid = pid()</v><v>Runners = [pid()]</v><v>RunnerMonitorRefs = [reference()]</v></type>
+<desc><marker id="start_runners-4"/>
+
+<p>Spaws runner process * RunnerCount</p>
+</desc></func>
+<func>
+<name>version() -&gt; term()
+</name>
+<fsummary>returns current version of this module.</fsummary>
+
+<desc><marker id="version-0"/>
+
+<p>returns current version of this module <br/>
+  Used to determine what version of Distributest gem to load</p>
+</desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

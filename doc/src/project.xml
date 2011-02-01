@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>project</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>project.xml</file></header>
+<module>project</module>
+<modulesummary>Information about the project that the tests are being run from.</modulesummary>
+<description>
+<p>Information about the project that the tests are being run from<br/>
+  None of these functions should be called on remote nodes.<br/>
+  They are specific to the application who's tests are being ran</p></description>
+<funcs>
+<func>
+<name>local_global_setup_scrip_path() -&gt; term()
+</name>
+<fsummary>Path that the local global setup scripts are located.</fsummary>
+
+<desc><marker id="local_global_setup_scrip_path-0"/>
+
+<p>Path that the local global setup scripts are located. ie. node_setup and runner_setup</p>
+</desc></func>
+<func>
+<name>project_name() -&gt; term()
+</name>
+<fsummary>Uses CWD to get the Ruby projects name.</fsummary>
+
+<desc><marker id="project_name-0"/>
+
+<p>Uses CWD to get the Ruby projects name</p>
+</desc></func>
+<func>
+<name>remote_global_setup_script_path() -&gt; term()
+</name>
+<fsummary>Path that the /etc/global_setup_scripts/* gets copied to.</fsummary>
+
+<desc><marker id="remote_global_setup_script_path-0"/>
+
+<p>Path that the /etc/global_setup_scripts/* gets copied to. <br/>
+  This is based off the local hostname to keep everyones scripts separate</p>
+</desc></func>
+<func>
+<name>remote_path() -&gt; term()
+</name>
+<fsummary>Returns the path that the Ruby project will be copied to.</fsummary>
+
+<desc><marker id="remote_path-0"/>
+
+<p>Returns the path that the Ruby project will be copied to. <br/>
+  Currently rsyncing even locally so this is technically the only path local or remote</p>
+</desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

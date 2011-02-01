@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="latin1" ?>
+<!DOCTYPE erlref SYSTEM "erlref.dtd">
+<erlref>
+<header>
+<title>shell_command</title>
+<prepared></prepared>
+<responsible></responsible>
+<docno>1</docno>
+<approved></approved>
+<checked></checked>
+<date></date>
+<rev>A</rev>
+<file>shell_command.xml</file></header>
+<module>shell_command</module>
+<modulesummary>Used to run shell commands.</modulesummary>
+<description>
+<p>Used to run shell commands</p></description>
+<funcs>
+<func>
+<name>kill_port_process(Identifier) -&gt; term()
+</name>
+<fsummary>uses os:cmd to forcefull kill a process on the local system using the Identifier to find it.</fsummary>
+
+<desc><marker id="kill_port_process-1"/>
+
+<p>uses os:cmd to forcefull kill a process on the local system using the Identifier to find it</p>
+</desc></func>
+<func>
+<name>rsync_local() -&gt; term()
+</name>
+<fsummary>Locally rsyncs the Ruby project to the directory the tests will be run from.</fsummary>
+
+<desc><marker id="rsync_local-0"/>
+
+<p>Locally rsyncs the Ruby project to the directory the tests will be run from. This includes the local hostname<br/>
+  Also rsyncs the global_setup_scripts although this isn't really needed locally</p>
+</desc></func>
+<func>
+<name>rsync_remote(UserHost) -&gt; term()
+</name>
+<fsummary>Remotely rsyncs the Ruby project to the directory the tests will be run from.</fsummary>
+
+<desc><marker id="rsync_remote-1"/>
+
+<p>Remotely rsyncs the Ruby project to the directory the tests will be run from. This includes the local hostname<br/>
+  Also rsyncs the global_setup_scripts to the remote box</p>
+</desc></func>
+<func>
+<name>run(Dir, Cmd) -&gt; term()
+</name>
+<fsummary>takes directory to run in and command to run and runs it with the default timeout.</fsummary>
+
+<desc><marker id="run-2"/>
+
+<p>takes directory to run in and command to run and runs it with the default timeout</p>
+</desc></func>
+<func>
+<name>run(Dir, Cmd, X3::{monitor, MonitorRef}, X4::{identifier, ProcessIdentifier}) -&gt; Data</name>
+<fsummary>Runs a command and also monitors the process it was called from.</fsummary>
+<type>
+<v>Dir = string()</v><v>Cmd = string()</v><v>MonitorRef = reference()</v><v>ProcessIdentifier = string()</v><v>Data = string()</v></type>
+<desc><marker id="run-4"/>
+
+<p>Runs a command and also monitors the process it was called from <br/>
+  If the monitored process goes down the port process will be killed and the script it was running forcefull killed
+  using the ProcessIdentifier to find it on the system BE CAREFULL =).</p>
+</desc></func>
+<func>
+<name>run_file_if_exists(ProjectFilePath, File) -&gt; term()
+</name>
+<fsummary>if File exists it is run.</fsummary>
+
+<desc><marker id="run_file_if_exists-2"/>
+
+<p>if File exists it is run</p>
+</desc></func>
+<func>
+<name>run_file_if_exists_with_monitor(ProjectFilePath, File, RunnerIdentifier, MonitorRef, Identifier) -&gt; term()
+</name>
+<fsummary>Run File if exists and monitors caller.</fsummary>
+
+<desc><marker id="run_file_if_exists_with_monitor-5"/>
+
+<p>Run File if exists and monitors caller. If caller goes down port is closed and script forcefully killed using the Identifier</p>
+</desc></func></funcs>
+
+<authors>
+
+<aname>Curtis Carter</aname>
+<email>curtis@rubyhq.com</email></authors></erlref>

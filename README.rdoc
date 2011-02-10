@@ -1,0 +1,74 @@
+= Distributest
+Distributed/Concurrent Ruby test runner.
+
+== Description
+Distributest allows you to run your tests across multiple cores on multiple nodes.
+It is designed to not interfere with anyone that is using the nodes the tests are distributed to.  They can also run the tests for the same project at the same time without issue.
+
+== Installation
+You need Erlang installed on every box you intend to distribute to/from
+Tested heavily with R13B04
+
+Clone project to any folder
+Go into folder and run: 
+rake compile
+rake install_gem
+sudo rake install
+
+This will install the app into /usr/local/distributest and make symlinks for the scripts used to start the Erlang vms.
+
+Run rake -T for more options although they are limited at the moment.
+
+== Configuration
+Inside the project there is a folder named move_following_folders
+Copy or move the distributest folder in to_etc to /etc on your box.
+Edit set_hostname.sh and replace the comment with the fully qualified name of the box it's installed on. This is needed by most boxes as I am expecting fully qualified names to be used to communicate between the erlang VM on each node. NOTE:This will probably change in future.
+
+Inside the global_setup_scripts folder there are 2 files, node_setup and runner_setup.  These two files are copied to every node participating on every test run.  The node_setup file is executed in the project directory on every node before any runners start. This is useful for running bundle install on every node.  The runner_setup file is executed on every runner startup.  rake db:create and rake db:migrate should be located here if your testing a Rails app. The runner_setup file is passed an identifier as the first argument and should be used to name your databases so there are no clashes.  Both files included in this project have examples commented out in them of exactly how they are used by the team I'm on.
+
+node_config.txt
+This is the main conifguration file. It includes a file glob of what tests to run, the nodes to run them on, and the amount of runners per node.
+Every node specified in here needs to have an ssh keypair set up from the box initiating tests. I currently support different users per node, but it needs to log in without a password for rsync.
+
+Finally, if your tests are using a database you need to edit your projects database.yml. It should look like this. 
+database: <%= ENV["DB_PREFIX"]%>distributest_test
+Uncomment the last 4 lines of /etc/distributest/runner_setup as well.  This will allow every runner on every node to have it's own database. Otherwise you will be blowing away your other devs test databases and having lock issues etc when 6 runners start pounding the same db.
+
+== Starting the application
+  Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node
+  To start the tests go to your Ruby project and type distributest. This starts a second vm only on the box initiating the tests.  It dies when the tests are done.
+
+== Usage
+Once you have done the initial configuration, go to your Ruby projects folder and type distributest.
+The code and global setup scripts will be rsynced to every node in the node_config.txt. It will then run the node_prep script on every node. Next it will start X runners on every node where X is specified in node_config.txt per node. Next each runner on each node will run the runner_setup script. Finally, every runner will start running the test files.
+
+A log of all stdout/errout of the Ruby and Bash processes and some other logging is written to /tmp/distributest.log. The node the message came from will be at the bottom of each message.  This is cleared out each run.
+
+== Speed
+  Distributest sorts files on a couple of things to try and get the slowest ones running first. Also, after the first run it will start sorting on the previous run time for each file.
+  You will very easily get your test suite time to that of the slowest test + db:migrate time.  This is why it's important to run the slowest ones first.
+  
+  On one project I'm working on I took a test suite that takes around 25 minutes normally down to 1:57.  
+
+== Technical
+  Distributest was designed to be used on your fellow devs workstations/laptops etc without causing any issues.  The way this works is by syncing your code to a configurable directory on every node being distributed to. The path is also keyed off the hostname of the node initiating the tests.  There is also a separate database set up for every runner on every node that is keyed off the hostname of the node initiating the tests and the number of the runner.
+Because of this as soon as you see a test fail you can fix the issue and run the test in Textmate etc without effecting the distributed run.
+
+I have designed this application to be fault tolerant in every aspect.  If any non critical piece of this application fails on any node, the tests will continue to run.  If a critical piece fails ie. you kill the main Erlang VM, it will properly kill off all Ruby processes on every node, and every process on the runner vm's on every node.  The runner Erlang vm will still be running on every node and this should never go down. It only takes around 10-15 MB of memory.
+
+== Test Support
+ Currently only support Rspec 1x, but due to the way this appliction is written it should not be hard to add Rspec2, test unit etc.  With a bit more work you should be able to do Python or any other language.
+I plan on adding Rspec 2 and Test Unit.
+
+== Todos
+* Rewrite using OTP
+* Better way to handle upgrading a cluster
+* Put files of failed worker(s) back in queue
+* Support more than Rspec 1x
+
+== Disclaimer
+THIS WILL NOT WORK AT ALL ON WINDOWS!! You can try but don't say I didn't warn you.
+I am not responsible for anything bad that happens including loss of data.
+
+I have ran over a billion specs through this application without issue. I do not guarantee that this will happen for you.  Please submit any issues you encounter after you have verified that your tests run using normal methods. Please keep in mind that if you distribute a thousand broken tests they will still be broken when ran on Distributest =)
+If you leave test data around you will likely see random failures.  The order of tests on any given runner is not consistent as it's designed to run the entire suite as fast as possible.  This can lead to random test failures where a test in one file causes a test in a following file to fail due to left over data etc.  You may not see these in normal testing because it runs in the same order every time and the test causing the issue runs later.

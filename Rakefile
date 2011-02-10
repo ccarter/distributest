@@ -37,7 +37,7 @@ end
 desc "Install" 
 task :install do
   puts "Installing files to #{@install_destination}"
-  dirs_to_copy = ["bin/", "configuration/", "ebin/"]
+  dirs_to_copy = ["bin/", "ebin/"]
   FileUtils.mkdir_p(@install_destination)
   dirs_to_copy.each do |copy_dir|
     FileUtils.cp_r(copy_dir, @install_destination)

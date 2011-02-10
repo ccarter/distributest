@@ -7,7 +7,7 @@
 
 %% @doc Immediately spawns a new process and goes into loop
 start() ->
-	 spawn(fun() -> loop([],[]) end).
+	 spawn_link(fun() -> loop([],[], 0, 0) end).
 	
 sort_time_fun() ->
   fun({_Description1,Time1}, {_Description2, Time2}) ->
@@ -42,30 +42,54 @@ failed_message([Error|Errors]) ->
 	end,
 	failed_message(Errors).
 	
-loop(TimePerFile, Profiles) ->
+display_time_per_file(TimePerFile) ->
+  FileTimesToDisplay = sort_time_per_file(TimePerFile),
+	case FileTimesToDisplay of
+	  [] -> ok;
+	  _Any -> 
+	    io:format("~nTOTAL_TIME_PER_FILE, Greater than ~p second(s): ~n~p",
+	              [configuration:display_file_time_greater_than(), FileTimesToDisplay])
+  end.
+
+display_profile_times(ProfileTimes) ->
+	ProfilesToDisplay = remove_empty_profiles(ProfileTimes),
+	case ProfilesToDisplay of
+		[] -> ok;
+		_Any -> 
+		  io:format("~nPROFILE TIMES, Greater than ~p second(s): ~n~p~n",
+		            [configuration:display_profile_time_greater_than(), remove_empty_profiles(ProfilesToDisplay)])
+	end.
+  
+	
+loop(TimePerFile, Profiles, PassCount, FailCount) ->
 	receive
 		{pass_results, Text} ->
+			NewPassCount = PassCount + length(binary_to_list(Text)),
       io:format("~s", [Text]),
-      loop(TimePerFile, Profiles);
+      loop(TimePerFile, Profiles, NewPassCount, FailCount);
 
     {fail_results, Text} ->
-  	  failed_message(tuple_to_list(Text)),
-      loop(TimePerFile, Profiles);
+	    FailedList = tuple_to_list(Text),
+	    NewFailCount = FailCount + length(FailedList),
+  	  failed_message(FailedList),
+      loop(TimePerFile, Profiles, PassCount, NewFailCount);
 	  
 	  {total_time_for_file, File, Time} ->
-		  loop([{File, Time} | TimePerFile], Profiles);
+		  loop([{File, Time} | TimePerFile], Profiles, PassCount, FailCount);
      
     {profile, File, Profile} ->
-	    loop(TimePerFile, [sort_profile(File, Profile) | Profiles]);
+	    loop(TimePerFile, [sort_profile(File, Profile) | Profiles], PassCount, FailCount);
 	
 	  {captured_std_err_out, Text, RunnerPid} ->
 		  error_logger:info_msg("Output from ruby on ~p:~p~n~s", [node(RunnerPid), RunnerPid, Text]),
-		  loop(TimePerFile, Profiles);
+		  loop(TimePerFile, Profiles, PassCount, FailCount);
 	
  	  {shutdown, Caller} ->
 	    files:log_file_time(TimePerFile),
-      io:format("~nTOTAL_TIME_PER_FILE, Greater than ~p second(s): ~n~p",[configuration:display_file_time_greater_than(), sort_time_per_file(TimePerFile)]),
-      io:format("~nPROFILE TIMES, Greater than ~p second(s): ~n~p~n", [configuration:display_profile_time_greater_than(), remove_empty_profiles(Profiles)]),
+	    display_time_per_file(TimePerFile),
+	    display_profile_times(Profiles),
+      io:format("~n~p Passing Tests~n", [PassCount]),
+      io:format("~p Failing Tests~n", [FailCount]),
       Caller ! reporter_down,
       exit('ShuttingDown')
 	      

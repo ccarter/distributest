@@ -105,7 +105,6 @@ loop([FilesHead|FilesTail], Runners, RunnerRefs) ->
 		  RunnerPid ! {master_hostname, master_hostname()},
 		  loop([FilesHead|FilesTail], Runners, RunnerRefs);
 		
-		%Not really needed, but here incase a normal goes down normally before end of run
 		{'DOWN', Ref, process, Pid, normal} -> 
 		  {Runners1, RunnerRefs1} = remove_pid_ref(Pid, Ref, Runners, RunnerRefs),
 		  loop([FilesHead|FilesTail], Runners1, RunnerRefs1);

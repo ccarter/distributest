@@ -38,9 +38,9 @@ database: <%= ENV["DB_PREFIX"]%>distributest_test
 Uncomment the last 4 lines of /etc/distributest/runner_setup as well.  This will allow every runner on every node to have it's own database. Otherwise you will be blowing away your other devs test databases and having lock issues etc when 6 runners start pounding the same db.
 
 == Starting the application
-  Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node after you have edited the set_hostname.sh as instructed above.
+Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node after you have edited the set_hostname.sh as instructed above.
 
-  To start the tests go to your Ruby project and type distributest. This starts a second vm only on the box initiating the tests.  It dies when the tests are done.
+To start the tests go to your Ruby project and type distributest. This starts a second vm only on the box initiating the tests.  It dies when the tests are done.
 
 == Usage
 Once you have done the initial configuration, go to your Ruby projects folder and run distributest.
@@ -49,20 +49,22 @@ The code and global setup scripts will be rsynced to every node in the node_conf
 A log of all stdout/errout of the Ruby and Bash processes and some other logging is written to /tmp/distributest.log on the system that started the tests. The node the message came from will be at the bottom of each message.  This is cleared out each run.
 
 == Speed
-  Distributest sorts files on a couple of things to try and get the slowest ones running first. Also, after the first run it will start sorting on the previous run time for each file.
-  You will very easily get your test suite time to that of the slowest test + db:migrate time.  This is why it's important to run the slowest ones first.
+Distributest sorts files on a couple of things to try and get the slowest ones running first. Also, after the first run it will start sorting on the previous run time for each file.
   
-  On one project I'm working on I took a test suite that takes around 25 minutes normally down to 1:57.  
+You will very easily get your test suite time to that of the slowest test + db:migrate time.  This is why it's important to run the slowest ones first.
+  
+On one project I'm working on I took a test suite that takes around 25 minutes normally down to 1:57.  
 
 == Technical
-  Distributest was designed to be used on your fellow devs workstations/laptops etc without causing any issues.  The way this works is by syncing your code to a configurable directory on every node being distributed to. The path is also keyed off the hostname of the node initiating the tests.  There is also a separate database set up for every runner on every node that is keyed off the hostname of the node initiating the tests and the number of the runner.
+Distributest was designed to be used on your fellow devs workstations/laptops etc without causing any issues.  The way this works is by syncing your code to a configurable directory on every node being distributed to. The path is also keyed off the hostname of the node initiating the tests.  There is also a separate database set up for every runner on every node that is keyed off the hostname of the node initiating the tests and the number of the runner.
 Because of this as soon as you see a test fail you can fix the issue and run the test in Textmate etc without effecting the distributed run.
 
 I have designed this application to be fault tolerant in every aspect.  If any non critical piece of this application fails on any node, the tests will continue to run.  If a critical piece fails ie. you kill the main Erlang VM, it will properly kill off all Ruby processes on every node, and every process on the runner vm's on every node.  The runner Erlang vm will still be running on every node and this should never go down. It only takes around 10-15 MB of memory.
 
 == Test Support
- Currently only support Rspec 1x, but due to the way this appliction is written it should not be hard to add Rspec2, test unit etc.  
+Currently only support Rspec 1x, but due to the way this appliction is written it should not be hard to add Rspec2, test unit etc.  
 With a bit more work you should be able to do Python or any other language.
+
 I plan on adding Rspec 2 and Test Unit.
 
 == Todos

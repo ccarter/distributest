@@ -9,8 +9,7 @@
 -vsn("0.0.5").
 
 -define(GLOBAL_RUNNER_SETUP_FILE, "/runner_setup").
--define(PROJECTS_RUNNER_SETUP_FILE, "distributest/runner_setup").
--define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest_runner.rb").
+-define(PROJECTS_RUNNER_SETUP_FILE, ".distributest/runner_setup").
 
 master_monitor(MasterNode) ->
 	process_flag(trap_exit, true),

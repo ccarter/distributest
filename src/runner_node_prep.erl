@@ -5,13 +5,13 @@
 
 -module(runner_node_prep).
 -export([start/2, node_name/1]).
--vsn("0.0.3").
+-vsn("0.0.4").
 
 -include("includes/configuration.hrl").
 
 -define(RSYNC_USER, "racker").
--define(NODE_SETUP_FILE1, "/node_setup").
--define(NODE_SETUP_FILE2, "distributest/node_setup").
+-define(GLOBAL_NODE_SETUP_FILE, "/node_setup").
+-define(PROJECTS_NODE_SETUP_FILE, ".distributest/node_setup").
 
 %% THIS DOES NOT KILL -9 THE NODE_PREP SCRIPT ON THE NODES LIKE RUNNER DOES
 %% Will probably change in the future
@@ -71,10 +71,10 @@ sync_files(remote, Host, SshUser) ->
 	
 %%TODO look at error handling between local and remote node setup
 node_prep_script(ProjectFilePath, GlobalSetupScriptPath, MasterPrepProcess) ->
-	%Run the node prep thats in the Ruby project if it exists: project/distributest/node_prep
+	%Run the node prep thats in the Ruby project if it exists: project/.distributest/node_prep
 	%We don't run the global scripts if the project has it.
-	File2 = ProjectFilePath ++ "/" ++ ?NODE_SETUP_FILE2,
-  case shell_command:run_file_if_exists(ProjectFilePath, File2) of
+	ProjectsSetupFile = ProjectFilePath ++ "/" ++ ?PROJECTS_NODE_SETUP_FILE,
+  case shell_command:run_file_if_exists(ProjectFilePath, ProjectsSetupFile) of
 	  {error, enoent} -> ok; %file doesn't exist so go on
 	  _Any -> 
 	    notify_done_with_prep_scrip(MasterPrepProcess),
@@ -82,7 +82,7 @@ node_prep_script(ProjectFilePath, GlobalSetupScriptPath, MasterPrepProcess) ->
 	end,
 	%This is rsynced to remote nodes into project:global_setup_script_path() before being ran
 	%Only runs if the node prep script wasn't in the project
-	shell_command:run_file_if_exists(ProjectFilePath, GlobalSetupScriptPath ++ ?NODE_SETUP_FILE1),
+	shell_command:run_file_if_exists(ProjectFilePath, GlobalSetupScriptPath ++ ?GLOBAL_NODE_SETUP_FILE),
 	notify_done_with_prep_scrip(MasterPrepProcess).
 	
 notify_done_with_prep_scrip(Pid) ->

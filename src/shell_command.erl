@@ -74,7 +74,7 @@ kill_port_process(Identifier) ->
 run_file_if_exists(ProjectFilePath, File) ->
 	FileInfo = file:read_file_info(File),
 	case FileInfo of
-		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
+		{error, enoent} -> {error, enoent}; %File doesn't exist in project so not going to run it
 		{ok, _Fileinfo} -> 
   		shell_command:run(ProjectFilePath, "bash " ++ File ++ " 2>&1")
 	end.
@@ -83,7 +83,7 @@ run_file_if_exists(ProjectFilePath, File) ->
 run_file_if_exists_with_monitor(ProjectFilePath, File, RunnerIdentifier, MonitorRef, Identifier) ->
 	FileInfo = file:read_file_info(File),
 	case FileInfo of
-		{error, enoent} -> ok; %File doesn't exist in project so not going to run it
+		{error, enoent} -> {error, enoent}; %File doesn't exist in project so not going to run it
 		{ok, _Fileinfo} ->
 		  shell_command:run(ProjectFilePath, "bash " ++ File ++ " " ++ RunnerIdentifier ++ " 2>&1", MonitorRef, Identifier)
 	end.

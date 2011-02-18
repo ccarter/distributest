@@ -8,8 +8,8 @@
 -export([start_runners/4, version/0]).
 -vsn("0.0.5").
 
--define(RUNNER_SETUP_FILE1, "/runner_setup").
--define(RUNNER_SETUP_FILE2, "distributest/runner_setup").
+-define(GLOBAL_RUNNER_SETUP_FILE, "/runner_setup").
+-define(PROJECTS_RUNNER_SETUP_FILE, "distributest/runner_setup").
 -define(DISTRIBUTEST_RUBY_FILE, "distributest/distributest_runner.rb").
 
 master_monitor(MasterNode) ->
@@ -37,8 +37,8 @@ start_runners(Host, RunnerCount, Reporter, MasterPid, Runners, RunnerMonitorRefs
 
 start(Node, MasterNode, RunnerNumber, Reporter, ProjectFilePath) ->
 	%Need to get this before remote spawn because of hostname used in path
-	RunnerSetupFile1 = project:remote_global_setup_script_path() ++ ?RUNNER_SETUP_FILE1,
-  Runner = spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath, RunnerSetupFile1) end),
+	GlobalSetupFile = project:remote_global_setup_script_path() ++ ?GLOBAL_RUNNER_SETUP_FILE,
+  Runner = spawn(Node, fun() -> setup_and_start(RunnerNumber, MasterNode, Reporter, ProjectFilePath, GlobalSetupFile) end),
   %monitor from master
   Ref = erlang:monitor(process, Runner),
   {Runner, Ref}.
@@ -63,12 +63,16 @@ runner_identifier(RunnerNumber, MasterNode) ->
   lists:flatten(NormalizedHostName) ++ integer_to_list(RunnerNumber).
 
 %%Note the ProjectFilePath is determined before the remote process is spawned. Going to change this
-setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode, RunnerSetupFile1) ->
+%%This runs the Ruby projects runner_setup script if it exists.If it doesn't it tries to run one that was
+%%copied from the system initiating the tests. Neither file is required
+setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode, GlobalSetupFile) ->
 	MasterMonitorRef = master_monitor(MasterNode),
-	%First run any global runner setup.This is copied from system initiating tests
-  shell_command:run_file_if_exists_with_monitor(ProjectFilePath, RunnerSetupFile1, RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}),
-  RunnerSetupFile2 = ProjectFilePath ++ "/" ++ ?RUNNER_SETUP_FILE2,
-  shell_command:run_file_if_exists_with_monitor(ProjectFilePath, RunnerSetupFile2, RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}).
+	ProjectSetupFile = ProjectFilePath ++ "/" ++ ?PROJECTS_RUNNER_SETUP_FILE,
+  case shell_command:run_file_if_exists_with_monitor(ProjectFilePath, ProjectSetupFile, RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier}) of
+  	{error, enoent} ->   
+      shell_command:run_file_if_exists_with_monitor(ProjectFilePath, GlobalSetupFile, RunnerIdentifier, {monitor, MasterMonitorRef}, {identifier, RunnerIdentifier});
+    _Any -> ok
+  end.
 
 startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
 	Cmd = "ruby -e \"require 'rubygems';gem 'distributest', '= " ++ version() ++ "';require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",

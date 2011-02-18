@@ -71,14 +71,23 @@ sync_files(remote, Host, SshUser) ->
 	
 %%TODO look at error handling between local and remote node setup
 node_prep_script(ProjectFilePath, GlobalSetupScriptPath, MasterPrepProcess) ->
-	%first run the node prep thats in the installation if exists.
-	%This is rsynced to remote nodes into project:global_setup_script_path() before being ran
-	shell_command:run_file_if_exists(ProjectFilePath, GlobalSetupScriptPath ++ ?NODE_SETUP_FILE1),
 	%Run the node prep thats in the Ruby project if it exists: project/distributest/node_prep
+	%We don't run the global scripts if the project has it.
 	File2 = ProjectFilePath ++ "/" ++ ?NODE_SETUP_FILE2,
-  shell_command:run_file_if_exists(ProjectFilePath, File2),
-  MasterPrepProcess ! done_with_prep_script.
-  
+  case shell_command:run_file_if_exists(ProjectFilePath, File2) of
+	  {error, enoent} -> ok; %file doesn't exist so go on
+	  _Any -> 
+	    notify_done_with_prep_scrip(MasterPrepProcess),
+	    exit(normal)
+	end,
+	%This is rsynced to remote nodes into project:global_setup_script_path() before being ran
+	%Only runs if the node prep script wasn't in the project
+	shell_command:run_file_if_exists(ProjectFilePath, GlobalSetupScriptPath ++ ?NODE_SETUP_FILE1),
+	notify_done_with_prep_scrip(MasterPrepProcess).
+	
+notify_done_with_prep_scrip(Pid) ->
+  Pid ! done_with_prep_script.
+
 node_ready(Host, RunnerCount, MasterPid) ->
 	MasterPid ! {node_ready, Host, RunnerCount}.
 

@@ -5,16 +5,16 @@
 -export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0, user_for_current_host/0, node_settings_for_host/1]).
 -vsn("0.0.4").
 
--define(NODE_CONF_FILE, "/etc/distributest/node_config.txt").
--define(TEST_CONF_FILE, "distributest/test_config.txt").
-%%Following are defaults that can be overridden in node_config.txt
+-define(GLOBAL_CONF_FILE, "/etc/distributest/config.txt").
+-define(PROJECT_CONF_FILE, ".distributest/config.txt").
+%%Following are defaults that can be overridden in config.txt
 -define(PROFILE_TIME_GREATER_THAN, 1).
 -define(FILE_TIME_GREATER_THAN, 20).
 
 -include("includes/configuration.hrl").
 
 %% Use the local user for sshing into remote nodes be default.
-%% This is overriden by node_config.txt if the {ssh_user, String} is present
+%% This is overriden by config.txt if the {ssh_user, String} is present
 default_ssh_user() ->
 	os:getenv("USER").
 
@@ -35,12 +35,10 @@ settings_from_file(File) ->
 default_settings() ->
 	#settings{hosts=[],test_files=[],display_file_time_greater_than=?FILE_TIME_GREATER_THAN,display_profile_time_greater_than=?PROFILE_TIME_GREATER_THAN}.
 
-%% @doc Uses a settings record and loads entire node_config.txt into it
-%% @todo Currently removed support for overriding config per application. Need to add this back in
+%% @doc Uses a settings record and loads entire config.txt into it
 settings() ->
 	SettingsRecord = default_settings(),
-	NodeSettings = settings_from_file(?NODE_CONF_FILE),
-	%TestSettings = settings_from_file(?TEST_CONF_FILE),
+	NodeSettings = settings_from_file(?GLOBAL_CONF_FILE),
 	settings(NodeSettings, SettingsRecord).
 	
 settings([], SettingsRecord) -> 
@@ -69,7 +67,7 @@ settings([H|T], SettingsRecord) ->
 		  settings(T, NewRecord)
 	end.
 	
-%% @doc Returns list of node_settings records for each node in node_config.txt
+%% @doc Returns list of node_settings records for each node in systems config.txt
 runner_settings() ->
   SettingsRecord = settings(),
   SettingsRecord#settings.hosts.
@@ -107,28 +105,43 @@ remote_dir() ->
 	
 %% @doc Returns int with configured time in seconds X of what files to show at the
 %% end of the test run whos time was greater than X <br/>
-%% This is defaulted in this module so the tuple is not required in the node_config.txt
+%% This is defaulted in this module so the tuple is not required in the config.txt
 display_file_time_greater_than() ->
 	SettingsRecord = settings(),
 	SettingsRecord#settings.display_file_time_greater_than.
 	
 %% @doc Returns int with configured time in seconds X of what tests to show at the
 %% end of the test run whos time was greater than X <br/>
-%% This is defaulted in this module so the tuple is not required in the node_config.txt
+%% This is defaulted in this module so the tuple is not required in the config.txt
 display_profile_time_greater_than() ->
 	SettingsRecord = settings(),
 	SettingsRecord#settings.display_profile_time_greater_than.
 	
 %% @doc Returns a string that's expected to be a glob of what tests to run <br/>
-%% If the project has a distributest/node_config.txt it will override this <br/>
+%% If the project has a .distributest/config.txt it will override this <br/>
 %% This allows per project selection of tests to run.
 test_files_glob() ->
-	FileInfo = file:read_file_info(?TEST_CONF_FILE),
-	SettingsRecord = case FileInfo of
-		{error, enoent} -> settings(); %File doesn't exist in project so not going to override test file glob
-		{ok, _Fileinfo} -> settings(settings_from_file(?TEST_CONF_FILE), default_settings())
+	FileInfo = file:read_file_info(?PROJECT_CONF_FILE),
+  ProjectOverrideSettings = case FileInfo of
+		{error, enoent} -> {error, enoent}; %File doesn't exist in project
+		{ok, _Fileinfo} -> settings(settings_from_file(?PROJECT_CONF_FILE), default_settings())
 	end,
-	test_files_glob(SettingsRecord#settings.test_files, []).
+	
+	%If Project has config.txt it tries to find any test globs. If it doesn't find any it 
+	%goes to the systems config.txt
+	SettingsRecord = case ProjectOverrideSettings#settings.test_files of
+    {error, enoent} -> settings();
+    [] -> settings();
+    _OverrideSettings -> ProjectOverrideSettings
+  end,			
+
+  case SettingsRecord#settings.test_files of
+	  [] ->
+		  io:format("Could not find a test files glob in either /etc/distributest/config.txt"
+		            "nor in the projects .distributest/config.txt if it exists");
+		_Any ->
+      test_files_glob(SettingsRecord#settings.test_files, [])
+  end.
 	
 test_files_glob([], Globs) -> Globs;
 test_files_glob([TestFileGlob|T], Acc) ->

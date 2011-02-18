@@ -1,5 +1,0 @@
-%%Optional if this is in the /etc/distributest/node_config.txt
-%%If both exist this overrides the other
-
-%%EXAMPLE
-%{test_files, "spec/**/*_spec.rb"}.

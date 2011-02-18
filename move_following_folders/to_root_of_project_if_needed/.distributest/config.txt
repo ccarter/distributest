@@ -1,0 +1,5 @@
+%%Optional if this is in the /etc/distributest/config.txt
+%%If both exist this overrides the other
+
+%%EXAMPLE uncomment if wanted
+%{test_files, "spec/**/*_spec.rb"}.

@@ -25,16 +25,18 @@ Run rake -T for more options although they are limited at the moment.
 == Configuration
 Inside the project there is a folder named move_following_folders.  Copy or move the distributest folder in to_etc to /etc on your box.  The other folders are an example of how you can override the systems configurations per project.  I haven't had a need for this and it may or may not do want you want. Read the comments in the files if you need to override the settings from /etc/distributest with ones from your Ruby project
 
-Edit set_hostname.sh and replace the comment with the fully qualified name of the box it's installed on. This is needed by most boxes as I am expecting fully qualified names to be used to communicate between the erlang VM on each node. This needs to match the node name used in node_config.txt. The set_hostname.sh script is used when starting the runner and master erlang vms when using the supplied scripts (distributest, start_distributest_vm) NOTE:This will be made simpler in the future.
+Edit set_hostname.sh and replace the comment with the fully qualified name of the box it's installed on. This is needed by most boxes as I am expecting fully qualified names to be used to communicate between the erlang VM on each node. This needs to match the node name used in config.txt. The set_hostname.sh script is used when starting the runner and master erlang vms when using the supplied scripts (distributest, start_distributest_vm) NOTE:This will be made simpler in the future.
 
 === setup hooks
 Inside the global_setup_scripts folder there are 2 files, node_setup and runner_setup.  These two files are copied to every node participating on every test run.  The node_setup file is executed in the project directory on every node before any runners start. This is useful for running bundle install on every node.  The runner_setup file is executed on every runner startup.  rake db:create and rake db:migrate should be located here if your testing a Rails app. The runner_setup file is passed an identifier as the first argument and should be used to name your databases so there are no clashes.  Both files included in this project have examples commented out in them of exactly how they are used by the team I'm on.
 
-=== node_config.txt
+=== config.txt
 This is the main conifguration file. It includes a file glob of what tests to run, the nodes to run them on, and the amount of runners per node.
 Every node specified in here needs to have an ssh keypair set up from the box initiating tests. I currently support different users per node, but it needs to log in without a password for rsync.
 
 See file for examples of how to configure the runners etc. Please copy the formatting as these are just Erlang terms and it will not work if they are not valid. 
+
+If you need to have different tests run per project you can create .distributest/config.txt in project and put your file glob there. This will override the one in /etc/distributest/config.txt
 
 === Ruby projects database setup
 Finally, if your tests are using a database you need to edit your projects database.yml. It should look something like this. 
@@ -44,13 +46,13 @@ database: <%= ENV["DB_PREFIX"]%>distributest_test
 Uncomment the last 4 lines of /etc/distributest/runner_setup as well.  This will allow every runner on every node to have it's own database. Otherwise you will be blowing away your other devs test databases and having lock issues etc when X runners start pounding the same db.
 
 == Starting the application
-Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node after you have installed this application and edited the set_hostname.sh as instructed above. This will be changed in the future to have a proper startup/shutdown. I recommend starting it as the user that you set in the node_config.txt for each particular node.  If you have the same user across all the nodes it will be easier to get correct the first time.
+Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node after you have installed this application and edited the set_hostname.sh as instructed above. This will be changed in the future to have a proper startup/shutdown. I recommend starting it as the user that you set in the config.txt for each particular node.  If you have the same user across all the nodes it will be easier to get correct the first time.
 
 To start the tests go to your Ruby project and type distributest. 
 
 == Usage
 Once you have done the initial configuration, go to your Ruby projects folder and run distributest.
-The code and global setup scripts will be rsynced to every node in the node_config.txt. It will then run the node_prep script on every node. Next it will start X runners on every node where X is specified in node_config.txt per node. Next each runner on each node will run the runner_setup script. Finally, every runner will start running the test files.
+The code and global setup scripts will be rsynced to every node in the config.txt. It will then run the node_prep script on every node. Next it will start X runners on every node where X is specified in config.txt per node. Next each runner on each node will run the runner_setup script. Finally, every runner will start running the test files.
 
 A log of all stdout/errout of the Ruby and Bash processes and some other logging is written to /tmp/distributest.log on the system that started the tests. The node the message came from will be at the bottom of each message.  This is cleared out each run.
 

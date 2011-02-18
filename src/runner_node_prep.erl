@@ -120,7 +120,7 @@ runner_vm_status(Host) ->
 log_runner_vm_down(NodeName) ->
 	io:format("**************************~n"
 	          "***Runner VM ~p is down~n"
-	          "***Check that your node_config.txt fully matches the name on the runner vm and that it's running~n"
+	          "***Check that Distributest's config.txt fully matches the name on the runner vm and that it's running~n"
 	          "**************************~n"
 	          ,[NodeName]),
 	error_logger:error_msg("Runner VM ~p is down~n"

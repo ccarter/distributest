@@ -1,29 +1,31 @@
 = Distributest
-Distributed/Concurrent Ruby test runner.
+Distributed/Concurrent Ruby test runner written in Erlang.
 
 == Description
 Distributest allows you to run your tests across multiple cores on multiple nodes.
-It is designed to not interfere with anyone that is using the nodes the tests are distributed to.  Devs on the other nodes can also run the tests for the same project at the same time without issue.
+It is designed to not interfere with anyone that is using the nodes the tests are distributed to.  Devs on the other nodes can also run distributed tests for the same project at the same time without issue.
 
 == Installation
 You need Erlang installed on every box you intend to distribute to/from.  
 Tested heavily with R13B04
 
-Clone project to any folder
+Clone this project to any folder
 
 Go into folder and run: 
 * rake compile
 * rake install_gem
 * sudo rake install
 
+This needs to be done on every node your distributing to including your local box.
+
 This will install the app into /usr/local/distributest and make symlinks for the scripts used to start the Erlang vms.
 
 Run rake -T for more options although they are limited at the moment.
 
 == Configuration
-Inside the project there is a folder named move_following_folders
-Copy or move the distributest folder in to_etc to /etc on your box.
-Edit set_hostname.sh and replace the comment with the fully qualified name of the box it's installed on. This is needed by most boxes as I am expecting fully qualified names to be used to communicate between the erlang VM on each node. NOTE:This will probably change in future.
+Inside the project there is a folder named move_following_folders.  Copy or move the distributest folder in to_etc to /etc on your box.  The other folders are an example of how you can override the systems configurations per project.  I haven't had a need for this and it may or may not do want you want. Read the comments in the files if you need to override the settings from /etc/distributest with ones from your Ruby project
+
+Edit set_hostname.sh and replace the comment with the fully qualified name of the box it's installed on. This is needed by most boxes as I am expecting fully qualified names to be used to communicate between the erlang VM on each node. This needs to match the node name used in node_config.txt. The set_hostname.sh script is used when starting the runner and master erlang vms when using the supplied scripts (distributest, start_distributest_vm) NOTE:This will be made simpler in the future.
 
 === setup hooks
 Inside the global_setup_scripts folder there are 2 files, node_setup and runner_setup.  These two files are copied to every node participating on every test run.  The node_setup file is executed in the project directory on every node before any runners start. This is useful for running bundle install on every node.  The runner_setup file is executed on every runner startup.  rake db:create and rake db:migrate should be located here if your testing a Rails app. The runner_setup file is passed an identifier as the first argument and should be used to name your databases so there are no clashes.  Both files included in this project have examples commented out in them of exactly how they are used by the team I'm on.
@@ -32,15 +34,19 @@ Inside the global_setup_scripts folder there are 2 files, node_setup and runner_
 This is the main conifguration file. It includes a file glob of what tests to run, the nodes to run them on, and the amount of runners per node.
 Every node specified in here needs to have an ssh keypair set up from the box initiating tests. I currently support different users per node, but it needs to log in without a password for rsync.
 
+See file for examples of how to configure the runners etc. Please copy the formatting as these are just Erlang terms and it will not work if they are not valid. 
+
 === Ruby projects database setup
-Finally, if your tests are using a database you need to edit your projects database.yml. It should look like this. 
+Finally, if your tests are using a database you need to edit your projects database.yml. It should look something like this. 
+
 database: <%= ENV["DB_PREFIX"]%>distributest_test
-Uncomment the last 4 lines of /etc/distributest/runner_setup as well.  This will allow every runner on every node to have it's own database. Otherwise you will be blowing away your other devs test databases and having lock issues etc when 6 runners start pounding the same db.
+
+Uncomment the last 4 lines of /etc/distributest/runner_setup as well.  This will allow every runner on every node to have it's own database. Otherwise you will be blowing away your other devs test databases and having lock issues etc when X runners start pounding the same db.
 
 == Starting the application
-Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node after you have edited the set_hostname.sh as instructed above.
+Every system needs to have the 'runner' Erlang node started.  This can be left running forever. To start this type start_distributest_vm on every node after you have installed this application and edited the set_hostname.sh as instructed above. This will be changed in the future to have a proper startup/shutdown. I recommend starting it as the user that you set in the node_config.txt for each particular node.  If you have the same user across all the nodes it will be easier to get correct the first time.
 
-To start the tests go to your Ruby project and type distributest. This starts a second vm only on the box initiating the tests.  It dies when the tests are done.
+To start the tests go to your Ruby project and type distributest. 
 
 == Usage
 Once you have done the initial configuration, go to your Ruby projects folder and run distributest.
@@ -61,20 +67,26 @@ Because of this as soon as you see a test fail you can fix the issue and run the
 
 I have designed this application to be fault tolerant in every aspect.  If any non critical piece of this application fails on any node, the tests will continue to run.  If a critical piece fails ie. you kill the main Erlang VM, it will properly kill off all Ruby processes on every node, and every process on the runner vm's on every node.  The runner Erlang vm will still be running on every node and this should never go down. It only takes around 10-15 MB of memory.
 
+When you start a projects tests a second Erlang vm will be started on the box initiating the tests. This is only alive for as long as the tests are running.  It's name will be something like 'master@hostname.blah'.
+
 == Test Support
-Currently only support Rspec 1x, but due to the way this appliction is written it should not be hard to add Rspec2, test unit etc.  
+Currently this only support Rspec 1.x, but due to the way this appliction is written it should not be hard to add Rspec2, test unit etc.  
 With a bit more work you should be able to do Python or any other language.
+Check out the code that the gem is built from in gem/* 
 
 I plan on adding Rspec 2 and Test Unit.
 
 == Todos
-* Rewrite using OTP
+* Rewrite using OTP. I intended for this application to be a proof of concept, but it is being used in production by Rackspace and Thoughtworks now.  The application can be made simpler with OTP and I intend to start working it in soon.
 * Better way to handle upgrading a cluster
-* Put files of failed worker(s) back in queue
-* Support more than Rspec 1x
+* Put files of failed worker(s) back in queue, What happens now is you loose the results of the file being ran when a runner/ruby process dies.  The rest of the tests will continue on without issue.
+* Support more than Rspec 1.x
 
 == Disclaimer
 THIS WILL NOT WORK AT ALL ON WINDOWS!! You can try but don't say I didn't warn you.
+
+I have only tested this on OSX, but I do not believe there would be any issues on any *nix variant.
+
 I am not responsible for anything bad that happens including loss of data.
 
 I have ran over a billion specs through this application without issue. I do not guarantee that this will happen for you.  Please submit any issues you encounter after you have verified that your tests run using normal methods. Please keep in mind that if you distribute a thousand broken tests they will still be broken when ran on Distributest =)

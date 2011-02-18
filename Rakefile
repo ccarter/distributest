@@ -5,7 +5,9 @@ INCLUDE = "include"
 ERLC_FLAGS = "-I#{INCLUDE} +warn_unused_vars +warn_unused_import"
 
 SRC = FileList['src/*.erl']
+TEST_SRC = FileList['tests/*.erl']
 OBJ = SRC.pathmap("%{src,ebin}X.beam")
+TEST_OBJ = TEST_SRC.pathmap("%{tests,tests}X.beam")
 CLEAN.include("ebin/*.beam")
 @install_destination = "/usr/local/distributest"
 
@@ -15,6 +17,46 @@ rule ".beam" =>  ["%{ebin,src}X.erl"] do |t|
   sh "erlc -pa ebin -W #{ERLC_FLAGS} -o ebin #{t.source}"
 end
 
+#Test output from http://barrymitchelson.com/blog/tags/rake.html
+#Compiles tests and then application with export_all
+desc "Run Distributest Tests"
+task "run_distributest_tests" => ['tests'] + TEST_OBJ do
+  #Compile app with export all
+  ERLC_FLAGS = ERLC_FLAGS + " +export_all "
+  Rake::Task[:compile].invoke
+  modules = OBJ.map {|o| File.basename(o, ".beam") }
+
+  output = `erl \
+    -noshell \
+    -pa #{File.dirname(__FILE__) + '/ebin'} \
+    -eval 'eunit:test([#{modules.join(",")}], [verbose])' \
+    -s init stop`
+
+  output.each_line do |line|
+    case line
+      when /= (EUnit) =/
+        print line.gsub($1, green($1))
+      when /\*failed\*/
+        print red(line)
+      when /(\.\.\..*ok)/
+        print line.gsub($1,green($1))
+      when /Failed:\s+(\d+)\.\s+Skipped:\s+(\d+)\.\s+Passed:\s+(\d+)\./
+        puts "#{red("Failed: #{$1}")} Skipped: #{$2} #{green("Passed: #{$3}")}"
+      when/(All \d+ tests passed.)/
+        print green(line)
+    else
+      print line
+    end
+  end
+end
+
+def green(text)
+  "\e[32m#{text}\e[0m"
+end
+
+def red(text)
+  "\e[31m#{text}\e[0m"
+end
 desc "Build Gem"
 directory 'gem'
 task "build_gem" do
@@ -48,6 +90,8 @@ task :install do
   puts "You should install latest distributest gem as a non root user: rake install_gem"
   puts "!!!!!!!!!!!!!!!!!"
 end
+
+task :compile_tests => ['tests'] + TEST_OBJ
 
 desc "Compile"
 task :compile => ['ebin'] + OBJ do

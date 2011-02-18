@@ -69,7 +69,6 @@ master_hostname() ->
 runner_stop(RunnerPid) ->
 	exit(RunnerPid, 'DONE').
 	
-%%TODO log abnormal runner shutdowns
 runner_abnormal_down(remaining_runners, [], []) ->
   io:format("All runners died abnormally"),
   halt();

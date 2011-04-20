@@ -4,6 +4,10 @@
 %Directory that the project will be copied to.
 {remote_dir, "/distributed_test"}.
 
+%If you are using bundle set to true.
+%You need distributest, "= 0.0.X" in your gemfile if you do this then run bundle update distributest in your app.
+{use_bundler, true}.
+
 %%OPTIONAL
 {display_file_time_greater_than, 30}.
 {display_profile_time_greater_than, 3}.

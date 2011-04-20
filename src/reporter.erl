@@ -87,6 +87,11 @@ loop(TimePerFile, Profiles, PassCount, FailCount) ->
 		{file_put_back_in_queue, File} ->
 			error_logger:info_msg("Because a runner died it's file was put back in queue. File: ~p~n", [File]),
 			loop(TimePerFile, Profiles, PassCount, FailCount);
+			
+		{load_error, LoadError} ->
+			error_logger:error_msg("There was a GEM load error. ~n~p", [LoadError]),
+			io:format("There was a GEM load error. ~n~p~n", [LoadError]),
+			loop(TimePerFile, Profiles, PassCount, FailCount);
 	
  	  {shutdown, Caller} ->
 	    files:log_file_time(TimePerFile),

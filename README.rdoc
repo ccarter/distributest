@@ -81,7 +81,6 @@ I plan on adding Rspec 2 and Test Unit.
 == Todos
 * Rewrite using OTP. I intended for this application to be a proof of concept, but it is being used in production by Rackspace and Thoughtworks now.  The application can be made simpler with OTP and I intend to start working it in soon.
 * Better way to handle upgrading a cluster
-* Put files of failed worker(s) back in queue, What happens now is you loose the results of the file being ran when a runner/ruby process dies.  The rest of the tests will continue on without issue.
 * Support more than Rspec 1.x
 
 == Disclaimer

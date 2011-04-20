@@ -1,2 +1,2 @@
--record(settings, {hosts, remote_dir, test_files, display_file_time_greater_than, display_profile_time_greater_than}).
+-record(settings, {hosts, remote_dir, test_files, display_file_time_greater_than, display_profile_time_greater_than, bundler}).
 -record(node_settings, {host, runner_count, ssh_user}).

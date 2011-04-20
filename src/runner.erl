@@ -6,7 +6,7 @@
 
 -module(runner).
 -export([start_runners/4, version/0]).
--vsn("0.0.5").
+-vsn("0.0.6").
 
 -define(GLOBAL_RUNNER_SETUP_FILE, "/runner_setup").
 -define(PROJECTS_RUNNER_SETUP_FILE, ".distributest/runner_setup").
@@ -74,7 +74,12 @@ setup_environment(RunnerIdentifier, ProjectFilePath, MasterNode, GlobalSetupFile
   end.
 
 startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, ProjectFilePath) ->
-	Cmd = "ruby -e \"require 'rubygems';gem 'distributest', '= " ++ version() ++ "';require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",
+	case configuration:bundler() of
+		true -> Bundler = "bundle exec ";
+		false -> Bundler = ""
+	end,
+	
+	Cmd = Bundler ++ "ruby -e \"require 'rubygems';gem 'distributest', '= " ++ version() ++ "';require 'distributest'; Distributest.start('" ++ RunnerIdentifier ++ "')\"",
   Port = open_port({spawn, Cmd}, [{packet, 4}, {cd, ProjectFilePath}, nouse_stdio, exit_status, binary]),
 
   %tell the master we are ready to start running files
@@ -93,7 +98,9 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, Curre
 			  {no_results, Text} -> io:format("~n No results for file: ~p", [Text]);
 			  ready_for_file -> MasterNode ! {ready_for_file, self()};
 			  {captured_std_err_out, Text} -> Reporter ! {captured_std_err_out, Text, self()};
-			  {port_shutdown, _Text} -> stop()
+			  {port_shutdown, _Text} -> stop();
+			  %Gem load error in app
+			  {load_error, LoadError} -> Reporter ! {load_error, LoadError}
 			end,
 	    loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, CurrentFile);
 		 
@@ -102,7 +109,7 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, Curre
 		  Payload = term_to_binary({file, atom_to_binary(File, latin1)}),
 		  port_command(Port, Payload),
 		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, File);
-		 
+				 
 		%Master kills runner process this way when it's successfully completed
 		{'EXIT', _, 'DONE'} -> 
 		  stop_port(Port),

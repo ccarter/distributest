@@ -2,7 +2,7 @@
 %% @doc Handles the configuration files.
 
 -module(configuration).
--export([runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0, user_for_current_host/0, node_settings_for_host/1]).
+-export([bundler/0, runner_settings/0, remote_dir/0, test_files_glob/0, settings/0, settings_from_file/1, display_file_time_greater_than/0, display_profile_time_greater_than/0, user_for_current_host/0, node_settings_for_host/1]).
 -vsn("0.0.4").
 
 -define(GLOBAL_CONF_FILE, "/etc/distributest/config.txt").
@@ -56,6 +56,9 @@ settings([H|T], SettingsRecord) ->
 		{remote_dir, Dir} -> 
 		  NewRecord = SettingsRecord#settings{remote_dir=Dir},
 		  settings(T, NewRecord);
+		{use_bundler, Bool} ->
+			NewRecord = SettingsRecord#settings{bundler=Bool},
+			settings(T, NewRecord);
 		{test_files, TestFiles} ->
 		  NewRecord = SettingsRecord#settings{test_files=[TestFiles|SettingsRecord#settings.test_files]},
   		settings(T, NewRecord);
@@ -97,6 +100,10 @@ node_settings_for_host(Host) ->
 		  {error, node_settings_not_found_for_host};
 		{value, Record} -> {ok, Record}
 	end.
+	
+bundler() ->
+	SettingsRecord = settings(),
+	SettingsRecord#settings.bundler.
 
 %% @doc Returns the remote directory that is going to be used to copy the Ruby project into
 remote_dir() ->

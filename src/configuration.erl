@@ -126,14 +126,15 @@ test_files_glob() ->
 		{error, enoent} -> {error, enoent}; %File doesn't exist in project
 		{ok, _Fileinfo} -> settings(settings_from_file(?PROJECT_CONF_FILE), default_settings())
 	end,
-	
-	%If Project has config.txt it tries to find any test globs. If it doesn't find any it 
-	%goes to the systems config.txt
-	SettingsRecord = case ProjectOverrideSettings#settings.test_files of
-    {error, enoent} -> settings();
-    [] -> settings();
-    _OverrideSettings -> ProjectOverrideSettings
-  end,			
+
+  SettingsRecord = case ProjectOverrideSettings of
+	  {error, enoent} -> settings();
+	  _OverrideSettings -> 
+	    case ProjectOverrideSettings#settings.test_files of
+	      [] -> settings();
+	      _SettingsRecord -> ProjectOverrideSettings	    
+  		end
+	end,
 
   case SettingsRecord#settings.test_files of
 	  [] ->

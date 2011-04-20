@@ -36,7 +36,7 @@ Every node specified in here needs to have an ssh keypair set up from the box in
 
 See file for examples of how to configure the runners etc. Please copy the formatting as these are just Erlang terms and it will not work if they are not valid. 
 
-If you need to have different tests run per project you can create .distributest/config.txt in project and put your file glob there. This will override the one in /etc/distributest/config.txt
+If you need to have different tests run per project you can create .distributest/config.txt in project and put your file glob there. This will override the one in /etc/distributest/config.txt NOTE:This is the only override that is supported in the per project config.txt
 
 === Ruby projects database setup
 Finally, if your tests are using a database you need to edit your projects database.yml. It should look something like this. 

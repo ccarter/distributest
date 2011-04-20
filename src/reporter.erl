@@ -83,6 +83,10 @@ loop(TimePerFile, Profiles, PassCount, FailCount) ->
 	  {captured_std_err_out, Text, RunnerPid} ->
 		  error_logger:info_msg("Output from ruby on ~p:~p~n~s", [node(RunnerPid), RunnerPid, Text]),
 		  loop(TimePerFile, Profiles, PassCount, FailCount);
+		
+		{file_put_back_in_queue, File} ->
+			error_logger:info_msg("Because a runner died it's file was put back in queue. File: ~p~n", [File]),
+			loop(TimePerFile, Profiles, PassCount, FailCount);
 	
  	  {shutdown, Caller} ->
 	    files:log_file_time(TimePerFile),

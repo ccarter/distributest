@@ -79,9 +79,9 @@ startup_ruby(RunnerIdentifier, MasterMonitorReference, MasterNode, Reporter, Pro
 
   %tell the master we are ready to start running files
   MasterNode ! {ready_for_file, self()},
-  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier).
+  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, "FileName").
 	
-loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
+loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, CurrentFile) ->
 	receive
 		%receives the results from the ruby process
 		{Port, {data, Data}} ->			
@@ -95,23 +95,22 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
 			  {captured_std_err_out, Text} -> Reporter ! {captured_std_err_out, Text, self()};
 			  {port_shutdown, _Text} -> stop()
 			end,
-	    loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);
+	    loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, CurrentFile);
 		 
 	  %runs this file
-	  %TODO relook at port_command vs bang
 	  {file, File} ->
 		  Payload = term_to_binary({file, atom_to_binary(File, latin1)}),
 		  port_command(Port, Payload),
-		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, File);
 		 
 		%Master kills runner process this way when it's successfully completed
 		{'EXIT', _, 'DONE'} -> 
 		  stop_port(Port),
-		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, CurrentFile);
 		
 		%catches message from port processes during runner setup
 		{'EXIT', _Pid, normal} -> 
-		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier);
+		  loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, CurrentFile);
 		
 		%if the master is killed we force kill the ruby process and exit
 		{'DOWN', MasterMonitorReference, process, _Pid, _Reason} -> 
@@ -120,12 +119,14 @@ loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier) ->
       exit(master_down);
 		
 		%Grabbing ruby exits here and stopping the runner
-		{Port, {exit_status, _ExitNumber}} -> exit(rubydied);
+		{Port, {exit_status, _ExitNumber}} -> 
+		  MasterNode ! {put_file_back, CurrentFile}, 
+		  exit(rubydied);
 
 		%grab everything that doesn't match. FOR DEVELOPMENT DEBUGING
 		Any ->
 			io:format("Received:~p~n",[Any]),
-			loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier)
+			loop(Port, MasterNode, MasterMonitorReference, Reporter, RunnerIdentifier, CurrentFile)
 	end.
 
 %% @doc returns current version of this module <br/>

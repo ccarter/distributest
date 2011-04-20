@@ -33,6 +33,7 @@ run_files() ->
 	FilesToRun = files:sorted_test_files(),
 	loop(FilesToRun, [], []).
 
+%%TODO why am i converting this to an atom. nono
 run_file(Runner, File) ->
 	Runner ! {file, list_to_atom(File)}.
 
@@ -99,6 +100,14 @@ loop([FilesHead|FilesTail], Runners, RunnerRefs) ->
     {ready_for_file, Runner} ->
 	    run_file(Runner, FilesHead),
 	    loop(FilesTail, Runners, RunnerRefs);
+	
+	  %First attempt at putting failed workers file back in queue
+	  %obvious first issue is if we go into the shutdown loop and then a runner dies it's message will not be matched nor rerun
+	  {put_file_back, File} ->
+		  reporter ! {file_put_back_in_queue, File},
+		  %TODO not sure why using atom but thats what it is for now
+		  File2 = atom_to_list(File),
+		  loop([File2|FilesTail], Runners, RunnerRefs);
 	
 	  {master_hostname, RunnerPid} ->
 		  RunnerPid ! {master_hostname, master_hostname()},

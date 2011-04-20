@@ -81,6 +81,11 @@ I plan on adding Rspec 2 and Test Unit.
 == Bundler Support
 In the config you can tell distributest to use bundler.  If you do this you need to place distributest in your gemfile.  Currently it should be set to the exact version of the app you downloaded.  In the future I am going to relax this so the Erlang app can talk with any of the minor versions of the gem.
 
+== Startup issues
+  Note: this section will be fleshed out.
+  A log of info and errors is written during every run. It's located at /tmp/distributest.log on the box that is initiating the tests.  All logs from all nodes are written here.  Check it out for the initial debugging.  
+  If the runners are immediately dying there is a problem either loading the distributest gem or the rails application.  It can be a bit tricky tracking this down sometimes and I'm working on rescuing load errors and getting them back to the person running the tests.  
+
 == Todos
 * Rewrite using OTP. I intended for this application to be a proof of concept, but it is being used in production by Rackspace and Thoughtworks now.  The application can be made simpler with OTP and I intend to start working it in soon.
 * Better way to handle upgrading a cluster

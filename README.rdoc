@@ -85,6 +85,7 @@ In the config you can tell distributest to use bundler.  If you do this you need
 * Rewrite using OTP. I intended for this application to be a proof of concept, but it is being used in production by Rackspace and Thoughtworks now.  The application can be made simpler with OTP and I intend to start working it in soon.
 * Better way to handle upgrading a cluster
 * Support more than Rspec 1.x
+* Bundler support was quickly hacked in. Currently it gos from local config. Needs to be passed in from the person running tests so we don't read the local config on any of the runners.  Need to add override per app support as well.
 
 == Disclaimer
 THIS WILL NOT WORK AT ALL ON WINDOWS!! You can try but don't say I didn't warn you.

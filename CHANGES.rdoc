@@ -1,0 +1,2 @@
+== Changes
+  0.0.6 Is the initial release

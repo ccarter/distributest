@@ -78,6 +78,9 @@ Check out the code that the gem is built from in gem/*
 
 I plan on adding Rspec 2 and Test Unit.
 
+== Bundler Support
+In the config you can tell distributest to use bundler.  If you do this you need to place distributest in your gemfile.  Currently it should be set to the exact version of the app you downloaded.  In the future I am going to relax this so the Erlang app can talk with any of the minor versions of the gem.
+
 == Todos
 * Rewrite using OTP. I intended for this application to be a proof of concept, but it is being used in production by Rackspace and Thoughtworks now.  The application can be made simpler with OTP and I intend to start working it in soon.
 * Better way to handle upgrading a cluster

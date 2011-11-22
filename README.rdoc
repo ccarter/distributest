@@ -6,6 +6,8 @@ I haven't worked on this much lately.  I originally planned on rewriting using O
 I have come to realize if your project needs this, it has already failed.  There are very few applications that truly have
 slow running proper test suites.  If you find that yours is slow your doing it wrong.
 
+If you have a test suite that runs in 10 seconds but you want it to be faster, there are better choices than a fully distributed system such as this.
+
 == Description
 Distributest allows you to run your tests across multiple cores on multiple nodes.
 It is designed to not interfere with anyone that is using the nodes the tests are distributed to.  Devs on the other nodes can also run distributed tests for the same project at the same time without issue.

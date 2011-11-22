@@ -1,7 +1,7 @@
 = Distributest
 Distributed/Concurrent Ruby test runner written in Erlang.
 
-== NOTE ==
+== NOTE
 I haven't worked on this much lately.  I originally planned on rewriting using OTP and fixing some of the bugs. However,
 I have come to realize if your project needs this, it has already failed.  There are very few applications that truly have
 slow running proper test suites.  If you find that yours is slow your doing it wrong.
